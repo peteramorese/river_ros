@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "std_srvs/SetBool.h"
+#include "river_ros/PlanExecute.h"
 #include "edge.h"
 #include "astar.h"
 #include "state.h"
@@ -254,12 +255,21 @@ int main(int argc, char **argv){
 	std::cout<<"\n";
 
 	/* Service Client */
-	ros::ServiceClient client = TP_NH.serviceClient<std_srvs::SetBool>("end_effector_status");
+	ros::ServiceClient client1 = TP_NH.serviceClient<std_srvs::SetBool>("end_effector_status");
+	ros::ServiceClient client2 = TP_NH.serviceClient<river_ros::PlanExecute>("planex_service");
 	std_srvs::SetBool eef_status;
+	river_ros::PlanExecute planex_service;
 	eef_status.request.data = true;
-	if (client.call(eef_status)) {
+	planex_service.request.plan_and_execute = true;
+	if (client1.call(eef_status)) {
 		std::cout<<"i recieved: "<<eef_status.response.success<<std::endl;
 		std::cout<<"with message: "<<eef_status.response.message<<std::endl;
+	} else {
+		ROS_ERROR("Failed to call service");
+		return 1;
+	}
+	if (client2.call(planex_service)) {
+		std::cout<<"i recieved: "<<planex_service.response.status<<std::endl;
 	} else {
 		ROS_ERROR("Failed to call service");
 		return 1;
