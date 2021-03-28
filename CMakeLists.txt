@@ -73,8 +73,8 @@ find_package(Boost REQUIRED
 add_service_files(
   DIRECTORY srv
   FILES
-  PlanExecute.srv
-  CargoPoseArray.srv
+  PlanExecute_srv.srv
+  Observe_srv.srv
 )
 
 ## Generate actions in the 'action' folder
