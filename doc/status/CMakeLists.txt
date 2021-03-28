@@ -1,6 +1,6 @@
 add_executable(status_node src/status_node.cpp)
 
-add_subdirectory(include)
+#add_subdirectory(include)
 #target_include_directories(task_planner_node PUBLIC include)
 #link_directories(task_planner_node PUBLIC include)
 target_link_libraries(status_node 

@@ -190,6 +190,7 @@ add_subdirectory(doc/manipulator)
 add_subdirectory(doc/arduino)
 add_subdirectory(doc/bag_config)
 add_subdirectory(doc/task_planner)
+add_subdirectory(doc/status)
 
 
 

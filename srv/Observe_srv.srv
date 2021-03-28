@@ -1,4 +1,4 @@
 time time_sent
 ---
-time time_recieved
+time time_received
 string observation_label

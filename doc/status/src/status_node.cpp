@@ -1,14 +1,15 @@
 #include <string>
 #include "ros/ros.h"
 #include "river_ros/Observe_srv.h"
+#include "river_ros/PlanExecute_srv.h"
+#include "std_msgs/String.h"
 #include "edge.h"
 
 class ExecutionSub {
 	private:
-		&std::string ex_observation_label;
+		std::string& ex_observation_label;
 	public: 
-		ExecutionSub(std::string& ex_observation_label_) {
-			ex_observation_label = ex_observation_label_;
+		ExecutionSub(std::string& ex_observation_label_) : ex_observation_label(ex_observation_label_) {
 			ex_observation_label = "working";			
 		}
 		void executionSubCB(const std_msgs::String::ConstPtr& ex_status) {
@@ -49,11 +50,11 @@ int main(int argc, char **argv) {
 	/* Services and Publishers/Subscribers */	
 
 	// Retrieve bag configs
-	ros::ServiceClient observe_client status_NH.serviceClient<river_ros::Observe_srv>("status/observe_cargo");
+	ros::ServiceClient observe_client = status_NH.serviceClient<river_ros::Observe_srv>("status/observe_cargo");
 	river_ros::Observe_srv observe_srv_msg;
 	
 	// Start task planner
-	ros::ServiceClient plan_ex_client status_NH.serviceClient<river_ros::PlanExecute_srv>("status/plan_execute");
+	ros::ServiceClient plan_ex_client = status_NH.serviceClient<river_ros::PlanExecute_srv>("status/plan_execute");
 	river_ros::PlanExecute_srv plan_ex_srv_msg;
 
 	/* Super Task Planner */
@@ -62,6 +63,7 @@ int main(int argc, char **argv) {
 		auto currptr = heads[curr_node]->adjptr;
 		if (action) {
 			temp_action_label = currptr->label;
+			std::cout<<"temp_action_label: "<<temp_action_label<<std::endl;
 			if (temp_action_label == "observe") {
 				observe_srv_msg.request.time_sent = ros::Time::now();
 				if (observe_client.call(observe_srv_msg)) {
@@ -81,6 +83,7 @@ int main(int argc, char **argv) {
 						ros::Subscriber ex_sub = status_NH.subscribe("task_planner/status", 1, &ExecutionSub::executionSubCB, &ex_sub_container);
 						ros::Rate r(2); // Check twice every second
 						while (ros::ok() && temp_observation_label == "working") {
+							std::cout<<"checking ("<<temp_observation_label<<")..."<<std::endl;
 							ros::spinOnce();	
 							r.sleep();
 						}
@@ -107,16 +110,21 @@ int main(int argc, char **argv) {
 			curr_node = currptr->nodeind;
 		} else {
 			bool observation_found = false;
-			while (currptr != nullptr) {
+			ros::Rate r(1);
+			while (ros::ok() && currptr != nullptr) {
+				r.sleep();
+				std::cout<<"searching connectivity... label: "<<currptr->label<<std::endl;
+				std::cout<<"temp_observation_label: "<<temp_observation_label<<std::endl;
 				if (currptr->label == temp_observation_label) {
 					curr_node = currptr->nodeind;
 					observation_found = true;
 					break;
 				}
+				currptr = currptr->adjptr;
 			}
 			if (observation_found) {
 				action = true;
-				ROS_INFO_NAMED("status_node","Observed: %s", temp_observation_label);		
+				ROS_INFO_NAMED("status_node","Observed: %s", temp_observation_label.c_str());		
 			} else {
 				ROS_ERROR_NAMED("status_node","Did not find valid observation. Did a service fail?");
 			}
