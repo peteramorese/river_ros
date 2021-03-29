@@ -1,6 +1,6 @@
 #include <string>
 #include "ros/ros.h"
-#include "river_ros/Observe_srv.h"
+#include "river_ros/BagConfigPoseArray_msg.h"
 #include "river_ros/PlanExecute_srv.h"
 #include "std_msgs/String.h"
 #include "edge.h"
@@ -14,6 +14,25 @@ class ExecutionSub {
 		}
 		void executionSubCB(const std_msgs::String::ConstPtr& ex_status) {
 			ex_observation_label = ex_status->data;
+		}
+};
+
+class ObserveSub {
+	private: 
+		bool& bags_found;	
+		std::string obs_observation_label;
+	public:
+		ObserveSub(bool& bags_found_) : bags_found(bags_found_) {
+			bags_found = false;
+			obs_observation_label = "none";
+		}
+		void observeSubCB(const river_ros::BagConfigPoseArray_msg::ConstPtr& obs_bags_found) {
+			std::cout<<"recieved msg: bags are found" <<std::endl;
+			bags_found = obs_bags_found->bags_found;
+			obs_observation_label = obs_bags_found->observation_label;
+		}
+		void getObservationLabel(std::string& observation_label) {
+			observation_label = obs_observation_label;
 		}
 };
 	
@@ -50,8 +69,8 @@ int main(int argc, char **argv) {
 	/* Services and Publishers/Subscribers */	
 
 	// Retrieve bag configs
-	ros::ServiceClient observe_client = status_NH.serviceClient<river_ros::Observe_srv>("status/observe_cargo");
-	river_ros::Observe_srv observe_srv_msg;
+	//ros::ServiceClient observe_BC_sub = status_NH.subscribe("bag_config/bag_configs");
+	//river_ros::Observe_srv observe_srv_msg;
 	
 	// Start task planner
 	ros::ServiceClient plan_ex_client = status_NH.serviceClient<river_ros::PlanExecute_srv>("status/plan_execute");
@@ -65,12 +84,17 @@ int main(int argc, char **argv) {
 			temp_action_label = currptr->label;
 			std::cout<<"temp_action_label: "<<temp_action_label<<std::endl;
 			if (temp_action_label == "observe") {
-				observe_srv_msg.request.time_sent = ros::Time::now();
-				if (observe_client.call(observe_srv_msg)) {
-					temp_observation_label = observe_srv_msg.response.observation_label;	
-					ROS_INFO_NAMED("status_node","Observation service response received. Observation time: "); // display observation time (to-do) 
-				} else {
-					ROS_ERROR_NAMED("status_node","Failed to call service: observe");
+				bool bags_found;
+				ObserveSub obs_sub_container(bags_found);
+				ros::Subscriber obs_sub = status_NH.subscribe("bag_config/bag_configs", 1, &ObserveSub::observeSubCB, &obs_sub_container);
+				ros::Rate r_obs(1);
+				while (ros::ok() && !bags_found) {
+					std::cout<<"bags_found: "<<bags_found<<std::endl;
+					ros::spinOnce();
+					r_obs.sleep();
+				}
+				if (bags_found) {
+					obs_sub_container.getObservationLabel(temp_observation_label);
 				}
 			} else if (temp_action_label == "plan_execute") {
 				plan_ex_srv_msg.request.time_sent = ros::Time::now();
@@ -81,11 +105,11 @@ int main(int argc, char **argv) {
 						ExecutionSub ex_sub_container(temp_observation_label);
 						std::cout<<"Label being observed: " << temp_observation_label << std::endl;
 						ros::Subscriber ex_sub = status_NH.subscribe("task_planner/status", 1, &ExecutionSub::executionSubCB, &ex_sub_container);
-						ros::Rate r(2); // Check twice every second
+						ros::Rate r_ex(2); // Check twice every second
 						while (ros::ok() && temp_observation_label == "working") {
 							std::cout<<"checking ("<<temp_observation_label<<")..."<<std::endl;
 							ros::spinOnce();	
-							r.sleep();
+							r_ex.sleep();
 						}
 					}	
 				} else {
@@ -93,6 +117,7 @@ int main(int argc, char **argv) {
 				}
 			} else if (temp_action_label == "observe_check") {
 				// For now there is no check implemented
+				/*
 				observe_srv_msg.request.time_sent = ros::Time::now();
 				if (observe_client.call(observe_srv_msg)) {
 					temp_observation_label = observe_srv_msg.response.observation_label;	
@@ -100,7 +125,24 @@ int main(int argc, char **argv) {
 				} else {
 					ROS_ERROR_NAMED("status_node","Failed to call service: observe");
 				}
+				*/
 
+				// This is copied from the "observe" action but this probably
+				// should be some sort of service that checks the environment.
+				// It does not need to be a service but there needs to be some sort
+				// of verification that we are not using old data
+				bool bags_found;
+				ObserveSub obs_sub_container(bags_found);
+				ros::Subscriber obs_sub = status_NH.subscribe("bag_config/bag_configs", 1, &ObserveSub::observeSubCB, &obs_sub_container);
+				ros::Rate r_obs(1);
+				while (ros::ok() && !bags_found) {
+					ros::spinOnce();
+					r_obs.sleep();
+				}
+				if (bags_found) {
+					//getObservationLabel(temp_observation_label);
+					temp_observation_label = "task_complete";
+				}
 			} else if (temp_action_label == "shutdown") {
 				ROS_INFO_NAMED("status_node","Shutting down...");
 			} else {
@@ -110,9 +152,9 @@ int main(int argc, char **argv) {
 			curr_node = currptr->nodeind;
 		} else {
 			bool observation_found = false;
-			ros::Rate r(1);
+			//ros::Rate r(1);
 			while (ros::ok() && currptr != nullptr) {
-				r.sleep();
+				//r.sleep();
 				std::cout<<"searching connectivity... label: "<<currptr->label<<std::endl;
 				std::cout<<"temp_observation_label: "<<temp_observation_label<<std::endl;
 				if (currptr->label == temp_observation_label) {

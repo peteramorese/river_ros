@@ -63,11 +63,11 @@ find_package(Boost REQUIRED
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  DIRECTORY msg
+  FILES
+  BagConfigPoseArray_msg.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -186,7 +186,7 @@ include_directories(
 
 
 
-add_subdirectory(doc/manipulator)
+#add_subdirectory(doc/manipulator)
 add_subdirectory(doc/arduino)
 add_subdirectory(doc/bag_config)
 add_subdirectory(doc/task_planner)
