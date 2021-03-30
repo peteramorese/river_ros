@@ -9,6 +9,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	std_msgs
+	geometry_msgs
 	moveit_core
 	moveit_visual_tools
 	moveit_ros_planning
@@ -22,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 	tf2_ros
 	tf2_eigen
 	tf2_geometry_msgs
+	message_generation
 	)
 
 find_package(Eigen3 REQUIRED)
@@ -61,18 +63,19 @@ find_package(Boost REQUIRED
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  DIRECTORY msg
+  FILES
+  BagConfigPoseArray_msg.msg
+)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  DIRECTORY srv
+  FILES
+  PlanExecute_srv.srv
+  Observe_srv.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -82,10 +85,11 @@ find_package(Boost REQUIRED
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -127,12 +131,15 @@ set(RIVER_ROS_PACKAGE_INCLUDE_DIRS
 catkin_package(
 	INCLUDE_DIRS 
 		${RIVER_ROS_PACKAGE_INCLUDE_DIRS}
-	LIBRARIES river_ros
+		#LIBRARIES river_ros
 	CATKIN_DEPENDS 
 		moveit_core
 		moveit_visual_tools
 		moveit_ros_planning_interface
 		tf2_geometry_msgs
+		message_runtime
+		std_msgs
+		geometry_msgs
 	DEPENDS 
 		EIGEN3
 )
@@ -158,8 +165,6 @@ include_directories(
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/river_ros_node.cpp)
@@ -181,12 +186,16 @@ include_directories(
 
 
 
-add_subdirectory(doc/manipulator)
+#add_subdirectory(doc/manipulator)
 add_subdirectory(doc/arduino)
 add_subdirectory(doc/bag_config)
 add_subdirectory(doc/task_planner)
+add_subdirectory(doc/status)
 
 
+
+add_dependencies(eef_srv_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(task_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 
