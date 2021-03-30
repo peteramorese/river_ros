@@ -104,8 +104,8 @@ void SYSTEM::calibrate(BAG cal, std::vector<int> s)
 
 	// vector<vector<vector<DATA>>> Y = get_data(s, filename, 13); // Read the sensor data
 
-	filename = "../data/cam__final.txt";
-	vector<vector<vector<DATA>>> Y = get_data(s, filename, 11);
+	filename = "src/river_ros/doc/bag_config/data/cam__final.txt";
+	vector<vector<vector<DATA>>> Y = get_data(s, filename, 37);
 
 	for(int i = 0; i < s.size(); i++) // For each sensor in the network
 	{

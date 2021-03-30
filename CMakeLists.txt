@@ -12,6 +12,18 @@ find_package(catkin REQUIRED COMPONENTS roscpp message_generation std_msgs)
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
 
+include_directories(doc/bag_config/headers)
+include_directories(doc/bag_config/matplotlib-cpp-master)
+
+file(GLOB SOURCES "doc/bag_config/src/*.cpp")
+
+find_package(Armadillo REQUIRED)
+include_directories(${ARMADILLO_INCLUDE_DIRS})
+
+find_package(PythonInterp)
+find_package(PythonLibs)
+include_directories(${PYTHON_INCLUDE_DIR})
+
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -145,11 +157,14 @@ add_subdirectory(doc/manipulator)
 add_subdirectory(doc/arduino)
 add_subdirectory(doc/bag_config)
 
-add_executable(talker_ros doc/bag_config/src/talker.cpp)
-add_executable(listener_ros doc/bag_config/src/listener.cpp)
+add_executable(talker_ros doc/bag_config/talker.cpp)
+add_executable(listener_ros doc/bag_config/listener.cpp)
+add_executable(position ${SOURCES})
 
 target_link_libraries(talker_ros ${catkin_LIBRARIES})
 target_link_libraries(listener_ros ${catkin_LIBRARIES})
+target_link_libraries(position ${ARMADILLO_LIBRARIES})
+target_link_libraries(position ${PYTHON_LIBRARIES})
 
 
 

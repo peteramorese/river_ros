@@ -28,15 +28,16 @@
 // %Tag(FULLTEXT)%
 #include "ros/ros.h"
 #include "std_msgs/String.h"
-#include "beginner_tutorials/data_pkg.h"
+#include "river_ros/data_pkg.h"
 
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
 // %Tag(CALLBACK)%
-void chatterCallback(const beginner_tutorials::data_pkg::ConstPtr& msg)
+void chatterCallback(const river_ros::data_pkg::ConstPtr& msg)
 {
-  ROS_INFO("I heard: [%d, %d, %d, %d]", msg->x, msg->y, msg->sid, msg->mid);
+  // ROS_INFO("I heard: [%d, %d, %d, %d]", msg->x, msg->y, msg->sid, msg->mid);
+  std::cout << msg->x << ",\t" << msg->y << ",\t" << msg->mid << ",\t" << msg->sid << std::endl;
 }
 // %EndTag(CALLBACK)%
 
@@ -52,7 +53,7 @@ int main(int argc, char **argv)
    * You must call one of the versions of ros::init() before using any other
    * part of the ROS system.
    */
-  ros::init(argc, argv, "listener");
+  ros::init(argc, argv, "listener_ros");
 
   /**
    * NodeHandle is the main access point to communications with the ROS system.
@@ -78,6 +79,7 @@ int main(int argc, char **argv)
    */
 // %Tag(SUBSCRIBER)%
   ros::Subscriber sub = n.subscribe("chatter", 1000, chatterCallback);
+  std::cout << "Subscribed!" << std::endl;
 // %EndTag(SUBSCRIBER)%
 
   /**

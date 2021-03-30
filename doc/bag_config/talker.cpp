@@ -30,10 +30,16 @@
 // %EndTag(ROS_HEADER)%
 // %Tag(MSG_HEADER)%
 #include "std_msgs/String.h"
-#include "beginner_tutorials/data_pkg.h"
+#include "river_ros/data_pkg.h"
 // %EndTag(MSG_HEADER)%
 
+#include <iostream>
+#include <fstream>
+#include <string>
 #include <sstream>
+
+#include <limits.h>
+#include <unistd.h>
 
 /**
  * This tutorial demonstrates simple sending of messages over the ROS system.
@@ -51,7 +57,7 @@ int main(int argc, char **argv)
    * part of the ROS system.
    */
 // %Tag(INIT)%
-  ros::init(argc, argv, "talker");
+  ros::init(argc, argv, "talker_ros");
 // %EndTag(INIT)%
 
   /**
@@ -81,38 +87,67 @@ int main(int argc, char **argv)
    * buffer up before throwing some away.
    */
 // %Tag(PUBLISHER)%
-  ros::Publisher chatter_pub = n.advertise<beginner_tutorials::data_pkg>("chatter", 1000);
-// %EndTag(PUBLISHER)%
+  ros::Publisher chatter_pub = n.advertise<river_ros::data_pkg>("chatter", 1000);
 
-// %Tag(LOOP_RATE)%
   ros::Rate loop_rate(10);
-// %EndTag(LOOP_RATE)%
 
-  /**
-   * A count of how many messages we have sent. This is used to create
-   * a unique string for each message.
-   */
-// %Tag(ROS_OK)%
-  int count = 0;
+  std::string path = "src/river_ros/doc/bag_config/data/";
+  std::string filename = "cam0_final.txt";
+
   while (ros::ok())
   {
-// %EndTag(ROS_OK)%
-    /**
-     * This is a message object. You stuff it with data, and then publish it.
-     */
-// %Tag(FILL_MESSAGE)%
-    beginner_tutorials::data_pkg msg;
 
-    msg.x = 157;
-    msg.y = 103;
-    msg.sid = 0;
-    msg.mid = 2;
-    
-// %EndTag(FILL_MESSAGE)%
+    std::ifstream file;
+    file.open(path + filename);
 
-// %Tag(ROSCONSOLE)%
-    // ROS_INFO("%s", msg.data.c_str());
-// %EndTag(ROSCONSOLE)%
+    if(file.good())
+    {
+      std::string str;
+      std::string substr;
+      int cnt;
+      river_ros::data_pkg msg;
+
+      while(std::getline(file, str))
+      {
+
+        std::cout << str << std::endl;
+
+        std::stringstream part(str);
+
+        cnt = 0;
+
+        while(part.good())
+        {
+          cnt++;
+
+          getline(part, substr, ',');
+
+          if(cnt == 1)
+          {
+            msg.x = std::stod(substr);
+          }
+          else if(cnt == 2)
+          {
+            msg.y = std::stod(substr);
+          }
+          else if(cnt == 3)
+          {
+            msg.mid = std::stoi(substr);
+          }
+          else if(cnt == 4)
+          {
+            msg.sid = std::stoi(substr);
+          }
+        }
+
+        chatter_pub.publish(msg);
+
+        ros::spinOnce();
+
+        loop_rate.sleep();
+
+      }
+    }
 
     /**
      * The publish() function is how you send messages. The parameter
@@ -120,18 +155,18 @@ int main(int argc, char **argv)
      * given as a template parameter to the advertise<>() call, as was done
      * in the constructor above.
      */
-// %Tag(PUBLISH)%
-    chatter_pub.publish(msg);
-// %EndTag(PUBLISH)%
+// // %Tag(PUBLISH)%
+//     chatter_pub.publish(msg);
+// // %EndTag(PUBLISH)%
 
-// %Tag(SPINONCE)%
-    ros::spinOnce();
-// %EndTag(SPINONCE)%
+// // %Tag(SPINONCE)%
+//     ros::spinOnce();
+// // %EndTag(SPINONCE)%
 
-// %Tag(RATE_SLEEP)%
-    loop_rate.sleep();
-// %EndTag(RATE_SLEEP)%
-    ++count;
+// // %Tag(RATE_SLEEP)%
+//     loop_rate.sleep();
+// // %EndTag(RATE_SLEEP)%
+//     ++count;
   }
 
 

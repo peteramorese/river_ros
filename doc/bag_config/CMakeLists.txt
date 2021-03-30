@@ -7,3 +7,30 @@
 
 #install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
+# Bring the headers into the project
+
+
+#find_package(yaml-cpp)
+#include_directories(${YAML_CPP_INCLUDE_DIRS})
+
+# NEW
+
+
+
+# add the executable
+#add_executable(positionDetermination ${SOURCES})
+
+#target_link_libraries(positionDetermination ${ARMADILLO_LIBRARIES})
+#target_link_libraries(positionDetermination ${PYTHON_LIBRARY})
+
+#include_directories(/headers)
+#include_directories(/matplotlib-cpp-master)
+
+#file(GLOB SOURCES "/src/*.cpp")
+
+#find_package(Armadillo REQUIRED)
+#include_directories(${ARMADILLO_INCLUDE_DIRS})
+
+#find_package(PythonInterp)
+#find_package(PythonLibs)
+#include_directories(${PYTHON_INCLUDE_DIR})
