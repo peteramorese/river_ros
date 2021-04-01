@@ -1,0 +1,3 @@
+geometry_msgs/PoseArray pose_array
+bool bags_found
+string observation_label

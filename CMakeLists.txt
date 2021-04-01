@@ -1,13 +1,39 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(river_ros)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp message_generation std_msgs)
+
+find_package(catkin REQUIRED COMPONENTS
+	roscpp
+	std_msgs
+	geometry_msgs
+	moveit_core
+	moveit_visual_tools
+	moveit_ros_planning
+	moveit_ros_planning_interface
+	moveit_ros_perception
+	pluginlib
+	geometric_shapes
+	pcl_ros
+	pcl_conversions
+	rosbag
+	tf2_ros
+	tf2_eigen
+	tf2_geometry_msgs
+	message_generation
+	)
+
+find_package(Eigen3 REQUIRED)
+find_package(Boost REQUIRED 
+	system 
+	filesystem 
+	date_time 
+	thread
+	)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
@@ -38,20 +64,23 @@ find_package(Boost REQUIRED COMPONENTS system)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
- add_message_files(
-   FILES
-   data_pt.msg
-   data_pkt.msg
-   data_pkg.msg
-#   Message2.msg
- )
+
+add_message_files(
+  DIRECTORY msg
+  FILES
+  BagConfigPoseArray_msg.msg
+  data_pt.msg
+  data_pkt.msg
+  data_pkg.msg
+)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  DIRECTORY srv
+  FILES
+  PlanExecute_srv.srv
+  Observe_srv.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -61,10 +90,11 @@ find_package(Boost REQUIRED COMPONENTS system)
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   std_msgs  # Or other packages containing msgs
- )
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -95,11 +125,28 @@ find_package(Boost REQUIRED COMPONENTS system)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+
+set(RIVER_ROS_PACKAGE_INCLUDE_DIRS
+	doc/task_planner/include
+	doc/manipulator/include
+	doc/bag_config/include
+	#doc/arduino/include
+	)
+
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES river_ros
-#  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS system_lib
+	INCLUDE_DIRS 
+		${RIVER_ROS_PACKAGE_INCLUDE_DIRS}
+		#LIBRARIES river_ros
+	CATKIN_DEPENDS 
+		moveit_core
+		moveit_visual_tools
+		moveit_ros_planning_interface
+		tf2_geometry_msgs
+		message_runtime
+		std_msgs
+		geometry_msgs
+	DEPENDS 
+		EIGEN3
 )
 
 ###########
@@ -109,8 +156,10 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
- include
- ${catkin_INCLUDE_DIRS}
+	${RIVER_ROS_PACKAGE_INCLUDE_DIRS}
+	${catkin_INCLUDE_DIRS}
+	${Boost_INCLUDE_DIR}
+	${EIGEN3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -121,9 +170,6 @@ include_directories(
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/river_ros_node.cpp)
@@ -139,7 +185,15 @@ include_directories(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
+#add_subdirectory(doc/manipulator)
+add_subdirectory(doc/arduino)
+add_subdirectory(doc/bag_config)
+add_subdirectory(doc/task_planner)
+add_subdirectory(doc/status)
 
+
+add_dependencies(eef_srv_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(task_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 
