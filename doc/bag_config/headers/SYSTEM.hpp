@@ -6,16 +6,21 @@
 #include "SENSOR.hpp"
 #include "SENSOR_MIN.hpp"
 #include "EKF.hpp"
-#include "yaml-cpp/yaml.h"
 
 #include "oriDetermine.h"
 #include "matrix.h"
 
 #include "matplotlibcpp.h"
 
+#include "ros/ros.h"
+#include "river_ros/data_pt.h"
+#include "river_ros/data_pkt.h"
+#include "river_ros/data_pkg.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 #include <armadillo>
 
 using namespace std;
@@ -39,6 +44,7 @@ public:
 	void run_estimator_pickup();
 	void run_estimator_dropoff();
 	vector<vector<vector<DATA>>> get_data(std::vector<int>, string, int);
+	void calibrate_callback(const river_ros::data_pkg::ConstPtr&);
 	// void clear_data();
 
 
@@ -48,6 +54,9 @@ private:
 	vector<SENSOR> sensors; // Vector defining the network of sensors
 	vector<SENSOR_MIN> sensors_min; // Vector defining the network of sensors (minimal)
 	BAG bag; // Object defining the cargo bag being estimated
+	std::chrono::time_point<std::chrono::system_clock> est_start; // Time that estimation begins
+	double stop_est_cov_thrsh = 0.01; // Threshold to stop estimation
+	double stop_est_time = 30; // [s] Threshold to stop estimation
 	// vector<vector<vector<DATA>>> Y; // Vector to store data in
 
 	void init_default_sensors();

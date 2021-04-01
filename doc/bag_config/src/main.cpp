@@ -189,6 +189,8 @@ while(menu == true)
 			calibrator_p.markers[2].position = {0.1476375, 0.098425, 0};
 			calibrator_p.markers[3].position = {-0.111125, 0.073025, 0};
 
+			system.assign_bag(calibrator_p);
+
 			// Calibrate sensors 0 - 4
 			system.calibrate_pickup(calibrator_p);
 

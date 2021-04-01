@@ -52,6 +52,8 @@ include_directories(${PYTHON_INCLUDE_DIR})
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
+   data_pt.msg
+   data_pkt.msg
    data_pkg.msg
 #   Message2.msg
  )
@@ -163,6 +165,7 @@ add_executable(position ${SOURCES})
 
 target_link_libraries(talker_ros ${catkin_LIBRARIES})
 target_link_libraries(listener_ros ${catkin_LIBRARIES})
+target_link_libraries(position ${catkin_LIBRARIES})
 target_link_libraries(position ${ARMADILLO_LIBRARIES})
 target_link_libraries(position ${PYTHON_LIBRARIES})
 

@@ -30,6 +30,8 @@
 // %EndTag(ROS_HEADER)%
 // %Tag(MSG_HEADER)%
 #include "std_msgs/String.h"
+#include "river_ros/data_pt.h"
+#include "river_ros/data_pkt.h"
 #include "river_ros/data_pkg.h"
 // %EndTag(MSG_HEADER)%
 
@@ -92,25 +94,91 @@ int main(int argc, char **argv)
   ros::Rate loop_rate(10);
 
   std::string path = "src/river_ros/doc/bag_config/data/";
-  std::string filename = "cam0_final.txt";
+  int num_files = 5;
+  // std::string filename[num_files] = {"cam0_final.txt", "cam1_final.txt", "cam2_final.txt"};
+  std::string filename[num_files] = {"Y_cal0.txt", "Y_cal1.txt", "Y_cal2.txt", "Y_cal3.txt", "Y_cal4.txt"};
+  std::vector<std::ifstream*> files;
+
+  // std::ifstream file;
+  // file.open(path + filename[0]);
+  // files.push_back(&file);
+
+  // for(int i = 0; i < num_files; i++)
+  // {
+  //   std::ifstream file;
+  //   file.open(path + filename[i]);
+  //   files.push_back(&file);
+  //   // std::cout << "i = " << i << " open " << files[i]->good() << std::endl;
+  // }
+
+
+  std::string str;
+  std::string substr;
+  int cnt;
+  int count = 0;
+  int count_max = 3;
+  int file_id = 0;
+  int super_count = 0;
+  river_ros::data_pt point;
+  river_ros::data_pkt packet;
+  river_ros::data_pkg package;
+
+  // std::getline(*files[file_id], str);
+  // std::cout << str << std::endl;
+  // std::getline(*files[file_id+1], str);
+  // std::cout << "'" << str << "'" << std::endl;
+
+
+  // Array of ifstream objects only keeps files open with these four lines here??????
+  std::ifstream file1;
+  file1.open(path +filename[0]);
+  std::ifstream file2;
+  file2.open(path + filename[1]);
+  std::ifstream file3;
+  file3.open(path +filename[2]);
+  std::ifstream file4;
+  file4.open(path + filename[3]);
+  std::ifstream file5;
+  file5.open(path +filename[4]);
+
+  std::ifstream* file;
+  file = &file1;
+  // std::getline(*file, str);
+  // std::cout << str << std::endl;
+  // file = &file2;
+  // std::getline(*file, str);
+  // std::cout << str << std::endl;
+  // file = &file1;
+  // std::getline(*file, str);
+  // std::cout << str << std::endl;
+
+  // std::getline(file1, str);
+  // std::cout << str << std::endl;
+  // std::getline(file2, str);
+  // std::cout << "'" << str << "'" << std::endl;  
+
+  std::cout << std::endl;
 
   while (ros::ok())
   {
 
-    std::ifstream file;
-    file.open(path + filename);
-
-    if(file.good())
+    if(file->good())
     {
-      std::string str;
-      std::string substr;
-      int cnt;
-      river_ros::data_pkg msg;
 
-      while(std::getline(file, str))
+      // std::cout << "OPENING FILE " << file_id << std::endl;
+
+      // if(file_id > 0)
+      // {
+      //   while(true)
+      //   {
+
+      //   }
+      // }
+
+      std::getline(*file, str);
+
+      if(!str.empty())
       {
-
-        std::cout << str << std::endl;
 
         std::stringstream part(str);
 
@@ -122,32 +190,198 @@ int main(int argc, char **argv)
 
           getline(part, substr, ',');
 
-          if(cnt == 1)
+          if(!substr.empty())
           {
-            msg.x = std::stod(substr);
-          }
-          else if(cnt == 2)
-          {
-            msg.y = std::stod(substr);
-          }
-          else if(cnt == 3)
-          {
-            msg.mid = std::stoi(substr);
-          }
-          else if(cnt == 4)
-          {
-            msg.sid = std::stoi(substr);
+
+            // std::cout << "substr = '" << substr << "' " << substr.empty() << std::endl;
+
+            if(cnt == 1)
+            {
+              point.x = stod(substr);
+            }
+            else if(cnt == 2)
+            {
+              point.y = stod(substr);
+            }
+            else if(cnt == 3)
+            {
+              point.mid = stoi(substr);
+            }
+            else if(cnt == 4)
+            {
+              point.sid = stoi(substr);
+              // std::cout << "sid = " << point.sid << std::endl;
+            }
           }
         }
 
-        chatter_pub.publish(msg);
+        packet.pt.push_back(point);
+        // std::cout << "\tx = " << point.x << "\ty = " << point.y << "\tmid = " << point.mid << "\tsid = " << point.sid << std::endl;
 
-        ros::spinOnce();
+        // std::cout << "Next file is " << file_id << " " << files[file_id]->good() << std::endl;
 
-        loop_rate.sleep();
+        count++;
 
+        if(count == count_max)
+        {
+
+          // std::cout << "count " << count << std::endl;
+
+          count = 0;
+
+          package.pkt.push_back(packet);
+          packet.pt.clear();
+
+          if(file_id == 0)
+          {
+            file = &file2;
+            file_id = 1;
+          }
+          else if(file_id == 1)
+          {
+            file = &file3;
+            file_id = 2;
+          }
+          else if(file_id == 2)
+          {
+            file = &file4;
+            file_id = 3;
+          }
+          else if(file_id == 3)
+          {
+            file = &file5;
+            file_id = 4;
+          }
+          else if(file_id == 4)
+          {
+            file = &file1;
+            file_id = 0;
+
+            // std::cout << "Published Message " << super_count << std::endl;
+            chatter_pub.publish(package);
+            ros::spinOnce();
+            loop_rate.sleep();
+
+            printf("\033[A\33[2KT\r");
+            std::cout << "Published Message " << super_count << std::endl;
+
+            package.pkt.clear();
+            super_count++;
+          }
+
+          // if(file_id < num_files-1)
+          // {
+          //   file_id++;
+          //   // std::cout << "Next file is " << file_id << " " << files[file_id]->good() << std::endl;
+          // }
+          // else
+          // {
+          //   // std::cout << "Published!" << std::endl;
+          //   chatter_pub.publish(package);
+          //   ros::spinOnce();
+          //   loop_rate.sleep();
+
+          //   package.pkt.clear();
+          //   file_id = 0;
+          //   next_file = true;
+
+          //   // std::cout << "Next file is " << file_id << " " << files[file_id]->good() << std::endl;
+          // }
+        }
       }
+
     }
+
+  }
+
+  // while (ros::ok())
+  // {
+
+  //   int file_id = 0;
+
+  //   // std::cout << "FILE " << files[file_id]->good() << std::endl;
+
+  //   sleep(0.25);
+
+  //   if(files[file_id]->good())
+  //   {
+  //     std::string str;
+  //     std::string substr;
+  //     int count = 0;
+  //     int cnt;
+  //     river_ros::data_pt point;
+  //     river_ros::data_pkt packet;
+  //     river_ros::data_pkg package;
+
+  //     while(std::getline(*files[file_id], str))
+  //     {
+
+  //       std::cout << str << std::endl;
+
+  //       std::stringstream part(str);
+
+  //       cnt = 0;
+
+  //       while(part.good())
+  //       {
+  //         cnt++;
+
+  //         getline(part, substr, ',');
+
+  //         if(cnt == 1)
+  //         {
+  //           point.x = std::stod(substr);
+  //         }
+  //         else if(cnt == 2)
+  //         {
+  //           point.y = std::stod(substr);
+  //         }
+  //         else if(cnt == 3)
+  //         {
+  //           point.mid = std::stoi(substr);
+  //         }
+  //         else if(cnt == 4)
+  //         {
+  //           point.sid = std::stoi(substr);
+  //         }
+  //       }
+
+  //       packet.pt.push_back(point);
+
+  //       if(count == 3)
+  //       {
+  //         package.pkt.push_back(packet);
+
+  //         if(file_id < num_files-1)
+  //         {
+  //           file_id++;
+  //           std::cout << "fild_id = " << file_id << std::endl;
+  //           std::cout << "FILE file_id " << files[file_id]->good() << std::endl;
+  //         }
+  //         else
+  //         {
+  //           chatter_pub.publish(package);
+  //           ros::spinOnce();
+  //           loop_rate.sleep();
+  //           file_id = 0;
+  //         }
+  //         // chatter_pub.publish(package);
+
+  //         // ros::spinOnce();
+
+  //         // loop_rate.sleep();
+
+  //         count = -1;
+  //         packet.pt.clear();
+  //       }
+
+  //       count++;
+
+  //     }
+  //   }
+  // }
+
+
 
     /**
      * The publish() function is how you send messages. The parameter
@@ -167,7 +401,7 @@ int main(int argc, char **argv)
 //     loop_rate.sleep();
 // // %EndTag(RATE_SLEEP)%
 //     ++count;
-  }
+  // }
 
 
   return 0;

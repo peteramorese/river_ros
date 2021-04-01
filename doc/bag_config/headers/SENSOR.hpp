@@ -8,7 +8,6 @@
 #include "DATA.hpp"
 #include "EKF.hpp"
 
-
 #include <armadillo>
 using namespace arma;
 
@@ -22,6 +21,7 @@ public:
 	vec point; // [m] Point that the sensor is pointing at
 	mat frame; // Matrix defining the frame of the sensor
 	mat Q_C; // DCM to convert from the sensor frame to the Core Frame
+	std::vector<EKF> ekf;
 	
 	const double x_max = 315; // Max x-measurement
 	const double y_max = 207; // Max y-measurement
@@ -44,7 +44,6 @@ public:
 
 private:
 	// Data:
-	std::vector<EKF> ekf;
 	vec position_true; // [m] True position vector of the sensor
 
 	// Methods:

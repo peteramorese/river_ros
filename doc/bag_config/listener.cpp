@@ -28,16 +28,26 @@
 // %Tag(FULLTEXT)%
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+#include "river_ros/data_pt.h"
+#include "river_ros/data_pkt.h"
 #include "river_ros/data_pkg.h"
 
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
 // %Tag(CALLBACK)%
-void chatterCallback(const river_ros::data_pkg::ConstPtr& msg)
+void chatterCallback(const river_ros::data_pkg::ConstPtr& pkg)
 {
   // ROS_INFO("I heard: [%d, %d, %d, %d]", msg->x, msg->y, msg->sid, msg->mid);
-  std::cout << msg->x << ",\t" << msg->y << ",\t" << msg->mid << ",\t" << msg->sid << std::endl;
+  // std::cout << msg->x << ",\t" << msg->y << ",\t" << msg->mid << ",\t" << msg->sid << std::endl;
+
+  std::cout << "Package Size = " << pkg->pkt.size() << std::endl;
+
+  for(int i = 0; i < pkg->pkt.size(); i++)
+  {
+    std::cout << "\tPacket " << i << " Size = " << pkg->pkt[i].pt.size() << std::endl;
+  }
+
 }
 // %EndTag(CALLBACK)%
 
@@ -79,7 +89,6 @@ int main(int argc, char **argv)
    */
 // %Tag(SUBSCRIBER)%
   ros::Subscriber sub = n.subscribe("chatter", 1000, chatterCallback);
-  std::cout << "Subscribed!" << std::endl;
 // %EndTag(SUBSCRIBER)%
 
   /**

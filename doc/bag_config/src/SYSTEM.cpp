@@ -88,6 +88,57 @@ void SYSTEM::assign_bag(BAG b)
 	set_sim_flag(sim); // Propagate the sim flag
 }
 
+void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
+{
+	// cout << "\n\nNEW MESSAGE" << endl;
+
+	// cout << "Package = " << package->pkt.size() << endl;
+
+	int curr_sid;
+	DATA y_k;
+	vector<DATA> Y_k;
+	vector<vector<DATA>> Y;
+	EKF e;
+	bool run_upd;
+
+	for(int i = 0; i < package->pkt.size(); i++)
+	{
+		for(int j = 0; j < package->pkt[i].pt.size(); j++)
+		{
+			y_k.x = package->pkt[i].pt[j].x;
+			y_k.y = package->pkt[i].pt[j].y;
+			y_k.mid = package->pkt[i].pt[j].mid;
+			y_k.sid = package->pkt[i].pt[j].sid;
+
+			curr_sid = y_k.sid;
+
+			Y_k.push_back(y_k);
+		}
+
+		Y.push_back(Y_k);
+
+		e = sensors[curr_sid].ekf.back();
+		run_upd = false; // Assume the update does not need to be run
+
+		for(int j = 0; j < 3; j++)
+		{
+			if(2.0*sqrt(e.P(j, j)) > stop_est_cov_thrsh)
+			{
+				run_upd = true;
+			}
+		}
+		
+		if(run_upd)
+		{
+			sensors[curr_sid].calibrate_sensor(Y, bag, core, cnst);
+		}
+		else
+		{
+			// cout << "Sensor " << curr_sid << " has met the covariance requirements, no longer updating." << endl;
+		}
+	}
+}
+
 
 void SYSTEM::calibrate(BAG cal, std::vector<int> s)
 {
@@ -98,22 +149,96 @@ void SYSTEM::calibrate(BAG cal, std::vector<int> s)
 	// 
 
 	cout << "Calibrating Sensors..." << endl;
+	cout << "\n\n\n\n\n";
 
-	string filename;
-	// filename = "../data/Y_cal_.txt";
+	est_start = std::chrono::system_clock::now();
+	std::chrono::time_point<std::chrono::system_clock> current_time;
+	std::chrono::duration<double> delta_time;
+	bool time_stop = false;
 
-	// vector<vector<vector<DATA>>> Y = get_data(s, filename, 13); // Read the sensor data
+	ros::VP_string remappings;
+	remappings.push_back(std::make_pair("chatter", "chatter"));
+	ros::init(remappings, "calibrator");
 
-	filename = "src/river_ros/doc/bag_config/data/cam__final.txt";
-	vector<vector<vector<DATA>>> Y = get_data(s, filename, 37);
+	ros::NodeHandle cal_nh;
+
+	ros::Subscriber cal_sub = cal_nh.subscribe("chatter", 1000, &SYSTEM::calibrate_callback, this);
+
+	bool loop = true;
+
+	EKF e;
+
+	while(loop)
+	{
+		loop = false;
+
+		printf("\033[A\033[A\033[A\033[A\033[A");
+
+		for(int i = 0; i < s.size(); i++)
+		{
+			e = sensors[s[i]].ekf.back();
+
+			printf("\33[2KT\r");
+
+			cout << "Sensor " << s[i] << ":\t";
+
+			for(int j = 0; j < 3; j++)
+			{
+				printf("\r");
+				if(j == 0)
+				{
+					cout << "\t\t\t";
+				}
+				else if(j == 1)
+				{
+					cout << "\t\t\t\t\t\t";
+				}
+				else if(j == 2)
+				{
+					cout << "\t\t\t\t\t\t\t\t\t";
+				}
+				
+				cout << 2.0*sqrt(e.P(j, j));
+
+				if(2.0*sqrt(e.P(j, j)) > stop_est_cov_thrsh)
+				{
+					loop = true;
+				}
+			}
+
+			cout << endl;
+		}
+
+		current_time = std::chrono::system_clock::now();
+		delta_time = current_time - est_start;
+
+		if(delta_time.count() > stop_est_time)
+		{
+			loop = false;
+			time_stop = true;
+		}
+
+		ros::spinOnce();
+
+	}
+
+	if(time_stop)
+	{
+		cout << "The necessary covariance threshold was not met before the maximum estimation time was reached." << endl;
+	}
+	else
+	{
+		cout << "Done" << endl;
+	}
+	// ros::spin();
 
 	for(int i = 0; i < s.size(); i++) // For each sensor in the network
 	{
-		cout << "\tCalibrating Sensor " << s[i] << "...\t\t";
+		// cout << "\tCalibrating Sensor " << s[i] << "...\t\t";
 
-		cout << " ";
+		// cout << " ";
 
-		sensors[s[i]].calibrate_sensor(Y[i], cal, core, cnst); // Calibrate Sensor SID
+		// sensors[s[i]].calibrate_sensor(Y[i], cal, core, cnst); // Calibrate Sensor SID
 
 		if(plot[0] == true) // If the plot flag is set to true
 		{
@@ -121,7 +246,7 @@ void SYSTEM::calibrate(BAG cal, std::vector<int> s)
 			// sensors[i].plot_e_y();
 		}
 
-		cout << "DONE" << endl;
+		// cout << "DONE" << endl;
 	}
 
 	set_sensors_min(s); // Assign the minimal sensor object
@@ -138,8 +263,7 @@ void SYSTEM::calibrate_pickup(BAG cal)
 
 	std::vector<int> s;
 
-	// for(int i = 0; i < 5; i++)
-	for(int i = 0; i < 3; i++)
+	for(int i = 0; i < 5; i++)
 	{
 		s.push_back(i);
 	}
