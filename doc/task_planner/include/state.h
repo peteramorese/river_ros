@@ -32,6 +32,7 @@ class State {
 		static bool getDomains(const std::string& var, std::vector<std::string>& in_domains);
 		static void setLabelGroup(const std::string& group_label, const std::vector<std::string>& dimension_labels);
 		static void setLabelGroup(const std::string& group_label, const std::vector<std::string>& dimension_labels, unsigned int index);
+		void getGroupDimLabels(const std::string& group_label, std::vector<std::string>& group_dim_labels) const;
 		bool argFindGroup(const std::string& var_find, const std::string& group_label, std::string& arg_dimension_label) const; 
 		void setState(const std::vector<std::string>& set_state);
 		void setState(const std::string& set_state_var, unsigned int dim);

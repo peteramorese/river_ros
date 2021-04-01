@@ -194,6 +194,15 @@ void State::setLabelGroup(const std::string& group_label, const std::vector<std:
 	groups[index] = add_group;
 }
 
+void State::getGroupDimLabels(const std::string& group_label, std::vector<std::string>& group_dim_labels) const {
+	for (int i=0; i<groups.size(); ++i) {
+		if (groups[i].label == group_label) {
+			group_dim_labels = groups[i].vars;
+			break;
+		}
+	}
+}
+
 bool State::argFindGroup(const std::string& var_find, const std::string& group_label, std::string& arg_dimension_label) const {
 	bool is_found = false;
 	arg_dimension_label = "NOT FOUND";

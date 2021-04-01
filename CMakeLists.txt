@@ -123,7 +123,7 @@ generate_messages(
 
 set(RIVER_ROS_PACKAGE_INCLUDE_DIRS
 	doc/task_planner/include
-	doc/manipulator/include
+	#doc/manipulator/include
 	doc/bag_config/include
 	#doc/arduino/include
 	)
