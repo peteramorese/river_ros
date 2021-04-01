@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 // %Tag(PUBLISHER)%
   ros::Publisher chatter_pub = n.advertise<river_ros::data_pkg>("chatter", 1000);
 
-  ros::Rate loop_rate(10);
+  ros::Rate loop_rate(5);
 
   std::string path = "src/river_ros/doc/bag_config/data/";
   int num_files = 5;

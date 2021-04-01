@@ -22,6 +22,7 @@ public:
 	bool plate; // Flag if marker contains a magnetic steel plate
 	bool sim; // Software run mode flag
 	bool updated = false; // Flag if marker's position was estimated. Used to pass on to orientation algorithm
+	std::vector<EKF> ekf; // EKF results
 
 	MARKER();
 	MARKER(vec p, int m, int pl);
@@ -31,7 +32,6 @@ public:
 	void plot_e_y();
 
 private:
-	std::vector<EKF> ekf; // EKF results
 
 	void init_ekf();
 	EKF ekf_update(EKF, vector<SENSOR_MIN>, vector<DATA>, CORE, CONSTANTS);

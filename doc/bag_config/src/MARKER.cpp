@@ -57,8 +57,8 @@ void MARKER::estimate_pos(vector<vector<DATA>> Y, vector<SENSOR_MIN> sensors, CO
 	// Adds the EKF update to ekf
 	// 
 	// Inputs:
-	// 		Y - [vector<vector<vector<DATA>>>] Multidimensional data vector containing all data of
-	// 			marker mid from each sensor for all time k. Y[mid][k][sid]
+	// 		Y - [vector<vector<DATA>>] Multidimensional data vector containing all data of
+	// 			marker mid from each sensor for all time k. Y[k][sid]
 	// 		core - [CORE] Object defining the Core Frame
 	// 		cnst - [CONSTANTS] Object defining system-wide constants
 	// 

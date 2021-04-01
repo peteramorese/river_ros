@@ -45,6 +45,7 @@ public:
 	void run_estimator_dropoff();
 	vector<vector<vector<DATA>>> get_data(std::vector<int>, string, int);
 	void calibrate_callback(const river_ros::data_pkg::ConstPtr&);
+	void estimator_callback(const river_ros::data_pkg::ConstPtr&);
 	// void clear_data();
 
 
@@ -56,7 +57,7 @@ private:
 	BAG bag; // Object defining the cargo bag being estimated
 	std::chrono::time_point<std::chrono::system_clock> est_start; // Time that estimation begins
 	double stop_est_cov_thrsh = 0.01; // Threshold to stop estimation
-	double stop_est_time = 30; // [s] Threshold to stop estimation
+	double stop_est_time = 15; // [s] Threshold to stop estimation
 	// vector<vector<vector<DATA>>> Y; // Vector to store data in
 
 	void init_default_sensors();

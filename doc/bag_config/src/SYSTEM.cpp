@@ -182,7 +182,7 @@ void SYSTEM::calibrate(BAG cal, std::vector<int> s)
 
 			cout << "Sensor " << s[i] << ":\t";
 
-			for(int j = 0; j < 3; j++)
+			for(int j = 0; j < cnst.n; j++)
 			{
 				printf("\r");
 				if(j == 0)
@@ -460,6 +460,63 @@ std::vector<std::vector<DATA>> SYSTEM::read_data(string filename)
 }
 
 
+void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
+{
+
+	EKF e;
+	DATA y_k;
+	vector<DATA> Y_k;
+	vector<vector<DATA>> Y;
+	bool run_upd;
+
+	for(int cur_mid = 0; cur_mid < bag.markers.size(); cur_mid++)
+	{
+
+		run_upd = false; // Assume the update does not need to be run
+		e = bag.markers[cur_mid].ekf.back();
+
+		for(int i_n = 0; i_n < cnst.n; i_n++)
+		{
+			if(2.0*sqrt(e.P(i_n, i_n)) > stop_est_cov_thrsh)
+			{
+				run_upd = true;
+			}
+		}
+
+		if(run_upd)
+		{
+			for(int i = 0; i < package->pkt.size(); i++)
+			{
+				for(int j = 0; j < package->pkt[i].pt.size(); j++)
+				{
+					y_k.x = package->pkt[i].pt[j].x;
+					y_k.y = package->pkt[i].pt[j].y;
+					y_k.mid = package->pkt[i].pt[j].mid;
+					y_k.sid = package->pkt[i].pt[j].sid;
+
+					if(y_k.mid == cur_mid)
+					{
+						Y_k.push_back(y_k);
+					}
+				}
+			}
+
+			if(Y_k.size() > 1)
+			{
+				cout << "Estimating Marker " << cur_mid << endl;
+				Y.push_back(Y_k);
+				bag.markers[cur_mid].estimate_pos(Y, sensors_min, core, cnst);
+
+				Y.clear();
+			}
+		}
+
+		Y_k.clear();
+	}
+
+}
+
+
 void SYSTEM::run_estimator(std::vector<int> s)
 {
 	// Uses Pixy sensor data to run an Extended Kalman Filter (EKF) for each marker that contains measurements
@@ -473,29 +530,84 @@ void SYSTEM::run_estimator(std::vector<int> s)
 	// string filename = "../data/Y_sim__test.txt";
 	// vector<vector<vector<DATA>>> Y = get_data(s, filename, 13);
 
-	string filename = "../data/box_cam__final.txt";
-	vector<vector<vector<DATA>>> Y = get_data(s, filename, 15);
+	// string filename = "../data/box_cam__final.txt";
+	// vector<vector<vector<DATA>>> Y = get_data(s, filename, 15);
 
-	vector<vector<vector<DATA>>> Y_reorg;
+	// vector<vector<vector<DATA>>> Y_reorg;
 
-	Y_reorg = reorg_data(Y); // Reorganize the data vector
+	// Y_reorg = reorg_data(Y); // Reorganize the data vector
 
-	for(int mid = 0; mid < Y_reorg.size(); mid++)
+	// for(int mid = 0; mid < Y_reorg.size(); mid++)
+	// {
+	// 	if(Y_reorg[mid].size() > 0)
+	// 	{
+	// 		cout << "\tEstimating Marker " << mid << "... ";
+
+	// 		bag.markers[mid].estimate_pos(Y_reorg[mid], sensors_min, core, cnst); // Estimate the position of Marker MID
+
+	// 		if(plot[1] == true && bag.markers[mid].updated == true) // If the plot flag is set to true
+	// 		{
+	// 			bag.markers[mid].plot_ekf(); 
+	// 			// bag.markers[mid].plot_e_y(); 
+	// 		}
+
+	// 		cout << "DONE" << endl;
+	// 	}
+	// }
+
+	est_start = std::chrono::system_clock::now();
+	std::chrono::time_point<std::chrono::system_clock> current_time;
+	std::chrono::duration<double> time_elapsed;
+	bool time_stop = false;
+
+	ros::NodeHandle est_nh;
+
+	// Create ros subscriber
+	ros::Subscriber est_sub = est_nh.subscribe("chatter", 1000, &SYSTEM::estimator_callback, this);
+
+	bool loop = true;
+	EKF e;
+
+	// Estimate continuously until an exit condition is met
+	while(loop)
 	{
-		if(Y_reorg[mid].size() > 0)
+		loop = false; // Assume an exit condition is met, set loop = true if not
+
+		for(int i = 0; i < bag.markers.size(); i++) // For each marker on the bag
 		{
-			cout << "\tEstimating Marker " << mid << "... ";
+			e = bag.markers[i].ekf.back(); // Get the latest state estimate
 
-			bag.markers[mid].estimate_pos(Y_reorg[mid], sensors_min, core, cnst); // Estimate the position of Marker MID
-
-			if(plot[1] == true && bag.markers[mid].updated == true) // If the plot flag is set to true
+			for(int j = 0; j < cnst.n; j++) // For each state being estimated (position in this case)
 			{
-				bag.markers[mid].plot_ekf(); 
-				// bag.markers[mid].plot_e_y(); 
-			}
 
-			cout << "DONE" << endl;
+				// Continue looping if any of the 2sigma bounds are greater than the set threshold
+				if(2.0*sqrt(e.P(j, j)) > stop_est_cov_thrsh)
+				{
+					loop = true;
+				}
+			}
 		}
+
+		current_time = std::chrono::system_clock::now();
+		time_elapsed = current_time - est_start;
+
+		// If the time elapsed is greater than the set threshold stop looping
+		if(time_elapsed.count() > stop_est_time)
+		{
+			loop = false;
+			time_stop = true;
+		}
+
+		ros::spinOnce();
+	}
+
+	if(time_stop)
+	{
+		cout << "The necessary covariance threshold was not met before the maximum estimation time was reached." << endl;
+	}
+	else
+	{
+		cout << "Done" << endl;
 	}
 
 	cout << "Running Orientation Estimator..." << endl;
