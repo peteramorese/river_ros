@@ -1,36 +1,45 @@
-#add_executable(<name> src/<source file>)
+find_package(
+	Armadillo REQUIRED
+	PythonInterp
+	PythonLibs
+	)
 
-#add_subdirectory(include)
-#target_include_directories(${PROJECT_NAME} PUBLIC include)
-#link_directories(${PROJECT_NAME} PUBLIC include)
-#target_link_libraries(<name> <class/library 1> <class/library 2>)
+include_directories(
+	${ARMADILLO_INCLUDE_DIRS}
+	${PYTHON_INCLUDE_DIR}
+	headers
+	matplotlib-cpp-master
+	)
 
-#install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+set(SOURCES
+	src/main.cpp
+	src/BAG.cpp
+	src/DATA.cpp
+	src/MARKER.cpp
+	src/SENSOR.cpp
+	src/SENSOR_MIN.cpp
+	src/SYSTEM.cpp
+	src/matrix.cpp
+	src/oriDetermine.cpp
+	)
 
-# Bring the headers into the project
+set(TALKER_SOURCES
+	src/talker.cpp
+	)
 
+add_executable(position
+	${SOURCES}
+	)
+add_executable(talker_ros
+	${TALKER_SOURCES}
+	)
 
-#find_package(yaml-cpp)
-#include_directories(${YAML_CPP_INCLUDE_DIRS})
+target_link_libraries(position 
+	${ARMADILLO_LIBRARIES}
+	${PYTHON_LIBRARY}
+	${catkin_LIBRARIES}
+	)
 
-# NEW
-
-
-
-# add the executable
-#add_executable(positionDetermination ${SOURCES})
-
-#target_link_libraries(positionDetermination ${ARMADILLO_LIBRARIES})
-#target_link_libraries(positionDetermination ${PYTHON_LIBRARY})
-
-#include_directories(/headers)
-#include_directories(/matplotlib-cpp-master)
-
-#file(GLOB SOURCES "/src/*.cpp")
-
-#find_package(Armadillo REQUIRED)
-#include_directories(${ARMADILLO_INCLUDE_DIRS})
-
-#find_package(PythonInterp)
-#find_package(PythonLibs)
-#include_directories(${PYTHON_INCLUDE_DIR})
+target_link_libraries(talker_ros
+	${catkin_LIBRARIES}
+	)
