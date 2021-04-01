@@ -179,6 +179,24 @@ bool Condition::subEvaluate(const State* state, const sub_condition& cond) {
 							}
 						}
 						break;
+					case GROUP: 
+						{
+							std::vector<std::string> group_dim_labels;
+							state->getGroupDimLabels(cond.arg_1, group_dim_labels);
+							for (int ii=0; ii<group_dim_labels.size(); ++ii) {
+								dom_var = state->getVar(group_dim_labels[ii]);
+								found = state->getDomains(dom_var, in_domains);
+								if (found) {
+									for (int ii=0; ii<in_domains.size(); ii++) {
+										if (in_domains[ii] == cond.arg_2) {
+											sub_eval = true;	
+											break;
+										}
+									}
+								}		
+							}
+						}
+						break;
 					default:
 						std::cout<<"Error: Condition Syntax error for operator IN_DOMAIN\n";
 				}

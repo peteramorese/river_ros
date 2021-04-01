@@ -1,4 +1,6 @@
 geometry_msgs/PoseStamped manipulator_pose
 geometry_msgs/PoseArray bag_poses
+string pickup_object
+string drop_object
 ---
 bool success
