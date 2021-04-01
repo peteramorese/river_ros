@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/minimal.dir/home/jabell/Documents/ASEN4018/Position/matplotlib-cpp-master/examples/minimal.cpp.o  -o minimal  -L/libs 

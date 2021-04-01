@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/jabell/Documents/ASEN4018/Position/matplotlib-cpp-master/examples/bar.cpp
+iostream
+-
+string
+-
+../matplotlibcpp.h
+/home/jabell/Documents/ASEN4018/Position/matplotlib-cpp-master/matplotlibcpp.h
+
+/home/jabell/Documents/ASEN4018/Position/matplotlib-cpp-master/matplotlibcpp.h
+Python.h
+-
+vector
+-
+map
+-
+array
+-
+numeric
+-
+algorithm
+-
+stdexcept
+-
+iostream
+-
+cstdint
+-
+functional
+-
+numpy/arrayobject.h
+-
+opencv2/opencv.hpp
+-
+

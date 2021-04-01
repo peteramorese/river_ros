@@ -6,6 +6,7 @@ add_compile_options(-std=c++11)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+
 find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	std_msgs
@@ -35,7 +36,7 @@ find_package(Boost REQUIRED
 	)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
 
 ################################################
@@ -63,10 +64,14 @@ find_package(Boost REQUIRED
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
+
 add_message_files(
   DIRECTORY msg
   FILES
   BagConfigPoseArray_msg.msg
+  data_pt.msg
+  data_pkt.msg
+  data_pkg.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -180,12 +185,6 @@ include_directories(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
-
-
-
 #add_subdirectory(doc/manipulator)
 add_subdirectory(doc/arduino)
 add_subdirectory(doc/bag_config)
@@ -193,12 +192,14 @@ add_subdirectory(doc/task_planner)
 add_subdirectory(doc/status)
 
 
-
 add_dependencies(eef_srv_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(task_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 
+add_subdirectory(doc/manipulator)
+add_subdirectory(doc/arduino)
+add_subdirectory(doc/bag_config)
 
 
 #############
