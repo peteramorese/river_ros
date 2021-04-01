@@ -128,7 +128,7 @@ generate_messages(
 
 set(RIVER_ROS_PACKAGE_INCLUDE_DIRS
 	doc/task_planner/include
-	doc/manipulator/include
+	#doc/manipulator/include
 	doc/bag_config/include
 	#doc/arduino/include
 	)
@@ -192,15 +192,10 @@ add_subdirectory(doc/task_planner)
 add_subdirectory(doc/status)
 
 
-add_dependencies(eef_srv_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(eef_srv_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(task_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-
-
-add_subdirectory(doc/manipulator)
-add_subdirectory(doc/arduino)
-add_subdirectory(doc/bag_config)
-
+add_dependencies(bag_config_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(bag_config_talker ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##

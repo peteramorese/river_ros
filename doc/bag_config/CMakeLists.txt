@@ -29,24 +29,23 @@ target_link_libraries(bag_config_test_node ${catkin_LIBRARIES})
 
 install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
-
 set(TALKER_SOURCES
 	src/talker.cpp
 	)
 
-add_executable(position
+add_executable(bag_config_node
 	${SOURCES}
 	)
-add_executable(talker_ros
+add_executable(bag_config_talker
 	${TALKER_SOURCES}
 	)
 
-target_link_libraries(position 
+target_link_libraries(bag_config_node 
 	${ARMADILLO_LIBRARIES}
 	${PYTHON_LIBRARY}
 	${catkin_LIBRARIES}
 	)
 
-target_link_libraries(talker_ros
+target_link_libraries(bag_config_talker
 	${catkin_LIBRARIES}
 	)
