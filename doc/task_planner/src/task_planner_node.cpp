@@ -1,10 +1,11 @@
 #include <cstdio>
 #include <math.h>
+#include <unordered_map>
 #include "ros/ros.h"
-#include "std_srvs/SetBool.h"
 #include "std_msgs/String.h"
 #include "river_ros/PlanExecute_srv.h"
 #include "river_ros/BagConfigPoseArray_msg.h"
+#include "geometry_msgs/Pose.h"
 #include "edge.h"
 #include "astar.h"
 #include "state.h"
@@ -29,7 +30,14 @@ class StartSrv {
 struct EnvironmentSub {
 	int num_bags;
 	bool bags_found;
-	river_ros::BagConfigPoseArray_msg pose_array_copy;
+	
+	// This will hold the locations of the bags that are found, and will eventually hold
+	// the hard-coded drop off locations (edited manually in the code)
+	river_ros::BagConfigPoseArray_msg pose_array_copy; 
+
+	// This maps the location labels to the array index for easy lookup
+	std::unordered_map<std::string, int> label_ind_map;
+
 	EnvironmentSub() {
 		bags_found = false;
 	}
@@ -41,6 +49,7 @@ struct EnvironmentSub {
 			pose_array_copy.domain_labels = env_pose_array->domain_labels;
 			pose_array_copy.pose_array.header.stamp = env_pose_array->pose_array.header.stamp;
 			num_bags = env_pose_array->pose_array.poses.size();
+			pose_array_copy.pose_array.poses.resize(num_bags);
 			for (int i=0; i<num_bags; ++i)  {
 				pose_array_copy.pose_array.poses[i].position.x = env_pose_array->pose_array.poses[i].position.x;
 				pose_array_copy.pose_array.poses[i].position.y = env_pose_array->pose_array.poses[i].position.x;
@@ -49,10 +58,14 @@ struct EnvironmentSub {
 				pose_array_copy.pose_array.poses[i].orientation.y = env_pose_array->pose_array.poses[i].orientation.y;
 				pose_array_copy.pose_array.poses[i].orientation.z = env_pose_array->pose_array.poses[i].orientation.z;
 				pose_array_copy.pose_array.poses[i].orientation.w = env_pose_array->pose_array.poses[i].orientation.w;
+				label_ind_map[pose_array_copy.domain_labels[i]] = i;
 			}
 		} else {
 			std::cout<<" --bags were not found"<<std::endl;
 		}
+	}
+	void mapSize(const std::string& label) {
+		label_ind_map[label] = pose_array_copy.pose_array.poses.size() - 1;
 	}
 };
 
@@ -63,30 +76,96 @@ class DropOffLocations {
 			std::string label;
 		};
 		std::vector<coord> locations;
+		std::vector<bool> is_occupied;
+		double max_r;
+		// Store quaternion for all hard-coded drop off locations, this assumes
+		// all bags should be placed in the same orientation
+		double qx, qy, qz, qw;
 	public:
-		void setLocCoords(double x, double y, double z, const std::string& coord_label) {
+		DropOffLocations(double max_r_) : max_r(max_r_) {}
+		void addLocation(double x, double y, double z, const std::string& coord_label) {
 			coord temp_coord;		
 			temp_coord.x = x;
 			temp_coord.y = y;
 			temp_coord.z = z;
 			temp_coord.label = coord_label;
 			locations.push_back(temp_coord);
+			is_occupied.push_back(false);
 		}
-		double cartDist(const coord& coord1, const coord& coord2) {
+		void getLocation(const std::string& coord_label, geometry_msgs::Pose& ret_pose) {
+			for (int i=0; i<locations.size(); ++i) {
+				if (locations[i].label == coord_label) {
+					ret_pose.position.x = locations[i].x;
+					ret_pose.position.y = locations[i].y;
+					ret_pose.position.z = locations[i].z;
+					ret_pose.orientation.x = qx;
+					ret_pose.orientation.y = qy;
+					ret_pose.orientation.z = qz;
+					ret_pose.orientation.w = qw;
+					break;
+				}
+			}
+		}
+		void getUnoccupiedLocation(geometry_msgs::Pose& ret_pose, std::string& ret_label) {
+			// This will return the first unoccupied location, then set
+			// that location to 'occupied'
+			for (int i=0; i<locations.size(); ++i) {
+				if (!is_occupied[i]) {
+					ret_pose.position.x = locations[i].x;
+					ret_pose.position.y = locations[i].y;
+					ret_pose.position.z = locations[i].z;
+					ret_pose.orientation.x = qx;
+					ret_pose.orientation.y = qy;
+					ret_pose.orientation.z = qz;
+					ret_pose.orientation.w = qw;
+					ret_label = locations[i].label;
+					is_occupied[i] = true;
+					break;
+				}
+			}
+		}
+		void setOrientation(double qx_, double qy_, double qz_, double qw_) {
+			qx = qx_;	
+			qy = qy_;	
+			qz = qz_;	
+			qw = qw_;	
+		}
+		double cartDist(double x, double y, double z, const coord& coord) {
 			double sum = 0;
-			sum += (coord1.x - coord2.x)*(coord1.x - coord2.x);
-			sum += (coord1.y - coord2.y)*(coord1.y - coord2.y);
-			sum += (coord1.z - coord2.z)*(coord1.z - coord2.z);
+			sum += (x - coord.x)*(x - coord.x);
+			sum += (y - coord.y)*(y - coord.y);
+			sum += (z - coord.z)*(z - coord.z);
 			sum = std::sqrt(sum);
 			return sum;
 		}
-		void returnNearestLocLabel(double x, double y, double z, std::string& ret_coord_label) {
-			float min_dist;
+		int getNumLocs() {
+			return locations.size();
+		}
+		bool getNearestLocLabel(double x, double y, double z, std::string& ret_coord_label) {
+			// This will return the nearest location label, then set that location
+			// to 'occupied', so that the same nearest location label cannot be 
+			// returned twice
+			double min_dist;
+			int locations_ind;
 			for (int i=0; i<locations.size(); ++i) {
-				
+				if (!is_occupied[i]) {
+					double temp_dist;
+					temp_dist = cartDist(x, y, z, locations[i]);
+					if (i == 0 || temp_dist < min_dist) {
+						min_dist = temp_dist;
+						locations_ind = i;
+					}
+				}
+			}
+			if (min_dist < max_r) {
+				ret_coord_label = locations[locations_ind].label;
+				is_occupied[locations_ind] = true;
+				return true;
+			} else {
+				return false;
+				ROS_WARN("Did not find a location within the maximum radius");	
 			}
 		}
-
 };
 
 int main(int argc, char **argv){			
@@ -106,7 +185,16 @@ int main(int argc, char **argv){
 	EnvironmentSub env_sub_container;
 	ros::Subscriber environment_TP_sub = TP_NH.subscribe("bag_config/bag_configs", 1, &EnvironmentSub::envSubCB, &env_sub_container);
 
-	int hello = 0;;
+	// Hard code drop off locations here
+	// std::vector<std::vector<double>> drop_off_locs = {{-.4, .4, 0}, {-.4, -.4, 0}, {-.4, .4, .5}, {-.4, -.4, .5}};
+	DropOffLocations drop_off_locs(1); // Maximum radius set in ctor
+	drop_off_locs.setOrientation(0, 0, 0, 1);
+	drop_off_locs.addLocation(-.4, .4, 0, "goal_L1");
+	drop_off_locs.addLocation(-.4,-.4, 0, "goal_L2");
+	drop_off_locs.addLocation(-.4, .4, .5, "goal_L3");
+	drop_off_locs.addLocation(-.4,-.4, .5, "goal_L4");
+
+	int hello = 0;
 	ros::Rate r(1);
 	while (ros::ok()) {
 		r.sleep();
@@ -136,10 +224,10 @@ int main(int argc, char **argv){
 				std::vector<std::string> domain_loc_d;
 				std::vector<std::string> domain_goal;
 				
-				// Keep track of how many bags are in the dropoff location
-				// so that dropoff locations can be added to match the number of objects
-				int N_obj = 0; 
-				int a;
+				// Keep track of how many bags are not found in the hard coded locs
+				// so that goal locations can be added to match the number of objects
+				int N_obj_elsewhere = 0; 
+				int a; // Iterates thru all objects
 				for (a=0; a<env_sub_container.pose_array_copy.pose_array.poses.size(); ++a) {
 					std::string domain_label = env_sub_container.pose_array_copy.domain_labels[a];
 					if (domain_label == "pickup location domain") {
@@ -149,39 +237,55 @@ int main(int argc, char **argv){
 							sprintf(label_buffer, "L_%d", a);
 							label = label_buffer;
 						}
-						// Found bag, add this found bag as a location to the TP
+						// Found bag, add this found bag as a location 
+						// to the TP
 						domain_pickup.push_back(label);
 						domain_loc_p.push_back(label);
 						var_labels_1.push_back(label);
 						var_labels_2.push_back(label);
+						N_obj_elsewhere++;
 					} else if (domain_label == "dropoff location domain") {
+						bool found;
 						std::string label;
-						{
-							char label_buffer[100]; // sprintf buffer
-							sprintf(label_buffer, "L_%d", a);
-							label = label_buffer;
+					        found = drop_off_locs.getNearestLocLabel(env_sub_container.pose_array_copy.pose_array.poses[a].position.x, env_sub_container.pose_array_copy.pose_array.poses[a].position.y, env_sub_container.pose_array_copy.pose_array.poses[a].position.z, label);
+						if (found) {
+							// Found bag, but it as already in a 
+							// drop off location (hard-coded)
+							geometry_msgs::Pose temp_pose;
+							drop_off_locs.getLocation(label, temp_pose);
+							env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
+							env_sub_container.pose_array_copy.domain_labels.push_back(label);
+							env_sub_container.mapSize(label);
+							domain_goal.push_back(label);
+							domain_dropoff.push_back(label);
+							var_labels_1.push_back(label);
+							var_labels_2.push_back(label);
+						} else {
+							{
+								char label_buffer[100]; // sprintf buffer
+								sprintf(label_buffer, "L_%d", a);
+								label = label_buffer;
+							}
+							// Found bag, add this found bag as a 
+							// location to the TP
+							domain_dropoff.push_back(label);
+							domain_loc_d.push_back(label);
+							var_labels_1.push_back(label);
+							var_labels_2.push_back(label);
 						}
-						// Found bag, add this found bag as a location to the TP
-						domain_dropoff.push_back(label);
-						domain_loc_d.push_back(label);
-						var_labels_1.push_back(label);
-						var_labels_2.push_back(label);
-				
-						
 					}
-					// For each found bag, make an empty location in the 
-					// goal domain (dropoff domain)
+				}
+				for (int i=0; i<N_obj_elsewhere; ++i) {
 					std::string label;
-					{
-						char label_buffer[100]; // sprintf buffer
-						sprintf(label_buffer, "GoalL_%d", a);
-						label = label_buffer;
-					}	
+					geometry_msgs::Pose temp_pose;
+					drop_off_locs.getUnoccupiedLocation(temp_pose, label);
+					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
+					env_sub_container.pose_array_copy.domain_labels.push_back(label);
+					env_sub_container.mapSize(label);
 					domain_dropoff.push_back(label);
-					domain_goal.push_back(label);
+					domain_loc_d.push_back(label);
 					var_labels_1.push_back(label);
 					var_labels_2.push_back(label);
-					N_obj++;
 				}
 
 				State::setStateDimension(var_labels_1, 0);
