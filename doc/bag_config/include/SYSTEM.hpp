@@ -38,8 +38,8 @@ public:
 	~SYSTEM();
 	void set_sim_flag(bool);
 	void assign_bag(BAG);
-	void calibrate_pickup(BAG);
-	void calibrate_dropoff(BAG);
+	void calibrate_pickup();
+	void calibrate_dropoff();
 	void run_estimator(std::vector<int>);
 	void run_estimator_pickup();
 	void run_estimator_dropoff();
@@ -56,12 +56,12 @@ private:
 	vector<SENSOR_MIN> sensors_min; // Vector defining the network of sensors (minimal)
 	BAG bag; // Object defining the cargo bag being estimated
 	std::chrono::time_point<std::chrono::system_clock> est_start; // Time that estimation begins
-	double stop_est_cov_thrsh = 0.01; // Threshold to stop estimation
-	double stop_est_time = 15; // [s] Threshold to stop estimation
+	double stop_est_cov_thrsh; // Threshold to stop estimation
+	double stop_est_time; // [s] Threshold to stop estimation
 	// vector<vector<vector<DATA>>> Y; // Vector to store data in
 
 	void init_default_sensors();
-	void calibrate(BAG, std::vector<int> s);
+	void calibrate(std::vector<int> s);
 	vector<vector<DATA>> read_data(string);
 	void set_sensors_min(vector<int>);
 	vector<vector<vector<DATA>>> reorg_data(vector<vector<vector<DATA>>>);

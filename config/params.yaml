@@ -1,0 +1,68 @@
+---
+# bag_config_node Parameters: /bag_config_node/
+software_mode: "Flight"
+run_calibration: 
+  pickup: False
+  dropoff: True
+plot:
+  calibration: False
+  estimation: False
+thresholds:
+  covariance: 0.01
+  time: 30
+calibrator:
+  pickup:
+    num_markers: 3
+    marker_0: [1.00, 0.75, -0.9]
+    marker_1: [-1.00, 0.75, -0.9]
+    marker_2: [0.75, 0.89, 0.92]
+    marker_3: [0.75, 0.89, 0.92]
+    marker_4: [0.75, 0.89, 0.92]
+    marker_5: [0.75, 0.89, 0.92]
+  dropoff:
+    num_markers: 3
+    marker_0: [1.00, 0.75, -0.9]
+    marker_1: [-1.00, 0.75, -0.9]
+    marker_2: [0.75, 0.89, 0.92]
+    marker_3: [0.75, 0.89, 0.92]
+    marker_4: [0.75, 0.89, 0.92]
+    marker_5: [0.75, 0.89, 0.92]
+bag_def:
+  num_markers: 6
+  marker_1: [1.1, 2.2, 3.3]
+  marker_2: [1.1, 2.2, 3.3]
+  marker_3: [1.1, 2.2, 3.3]
+  marker_4: [1.1, 2.2, 3.3]
+  marker_5: [1.1, 2.2, 3.3]
+  marker_6: [1.1, 2.2, 3.3]
+sensor_0:
+  position: [0.4142, 0.8, 0.4052]
+  point: [0, 0, -0.508]
+sensor_1:
+  position: [0.4142, -1.1214, 0.4052]
+  point: [0, 0, -0.508]
+sensor_2:
+  position: [0.75, 0.7242, 0.9479]
+  point: [0, 0, -0.508]
+sensor_3:
+  position: [0.75, -0.7242, 1.25]
+  point: [0, 0, -0.508]
+sensor_4:
+  position: [1.0, 0, 1.1934]
+  point: [0, 0, -0.508]
+sensor_5:
+  position: [1.772, 1.0353, 0.5978]
+  point: [2.2720, 0.8453, -0.8453]
+sensor_6:
+  position: [2.772, 1.0353, 0.5978]
+  point: [2.2720, 0.8453, -0.8453]
+sensor_7:
+  position: [1.272, 0, 1.1955]
+  point: [2.2720, 0.8453, -0.8453]
+sensor_8:
+  position: [3.272, 0, 1.1955]
+  point: [2.2720, 0.8453, -0.8453]
+sensor_9:
+  position: [2.272, -1.0353, 0.5978]
+  point: [2.2720, 0.8453, -0.8453]
+...

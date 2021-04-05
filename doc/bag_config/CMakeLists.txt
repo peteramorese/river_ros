@@ -7,7 +7,7 @@ find_package(
 include_directories(
 	${ARMADILLO_INCLUDE_DIRS}
 	${PYTHON_INCLUDE_DIR}
-	headers
+	include
 	matplotlib-cpp-master
 	)
 

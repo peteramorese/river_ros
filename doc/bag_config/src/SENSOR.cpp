@@ -55,99 +55,123 @@ void SENSOR::init_default_sensor(int id, CORE c)
 	//		CORE c - Struct defining the Core Frame
 
 	sid = id;
+	string param_str = "/bag_config_node/sensor_";
+	param_str = param_str + to_string(sid) + "/";
 
-	if(id == 0) // Sensor 0
-	{
-		position = {0.4142, 1.1214, 0.4052};
-		point = {0, 0, 0};
-		if(sim == true)
-		{
-			position_true = {0.5030, 1.3292, 0.4275};
-		}
-	}
-	else if(id == 1) // Sensor 1
-	{
-		// position = {0.4142, -1.1214, 0.4052};
-		position = {0, 0.5, 0.5};
-		point = {0, 0, 0};
-		if(sim == true)
-		{
-			position_true = {0.3772, -1.0889, 0.5566};
-		}
-	}
-	else if(id == 2) // Sensor 2
-	{
-		position = {0.75, 0.7242, 0.9479};
-		point = {0, 0, 0};
-		if(sim == true)
-		{
-			position_true = {0.7265, 0.8349, 0.7876};
-		}
-	}
-	else if(id == 3) // Sensor 3
-	{
-		position = {0.75, -0.7242, 0.9479};
-		point = {0, 0, 0};
-		if(sim == true)
-		{
-			position_true = {0.8038, -0.5408, 0.7220};
-		}
-	}
-	else if(id == 4) // Sensor 4
-	{
-		position = {1.00, 0.00, 1.1934};
-		point = {0, 0, 0};
-		if(sim == true)
-		{
-			position_true = {1.0862, 0.0319, 1.0626};
-		}
-	}
+	// cout << sid << " " << param_str << endl;
 
-	else if(id == 5) // Sensor 5
-	{
-		position = {1.772, 1.0353, 0.5978};
-		point = {2.2720, 0.8453, -0.8453};
-		if(sim == true)
-		{
-			position_true = {1.7286, 1.0696, 0.9556};
-		}
-	}
-	else if(id == 6) // Sensor 6
-	{
-		position = {2.772, 1.0353, 0.5978};
-		point = {2.2720, 0.8453, -0.8453};
-		if(sim == true)
-		{
-			position_true = {3.0489, 0.9003, 0.9013};
-		}
-	}
-	else if(id == 7) // Sensor 7
-	{
-		position = {1.272, 0.00, 1.1955};
-		point = {2.2720, 0.8453, -0.8453};
-		if(sim == true)
-		{
-			position_true = {1.3445, -0.0063, 1.267};
-		}
-	}
-	else if(id == 8) // Sensor 8
-	{
-		position = {3.272, 0.00, 1.1955};
-		point = {2.2720, 0.8453, -0.8453};
-		if(sim == true)
-		{
-			position_true = {3.2515, -0.0124, 1.3445};
-		}
-	}
-	else if(id == 9) // Sensor 9
-	{
-		position = {2.272, -1.0353, 0.5978};
-		point = {2.2720, 0.8453, -0.8453};
-		if(sim == true)
-		{
-			position_true = {2.4129, -0.8936, 0.6649};
-		}
-	}
+	vector<double> pos_vec;
+	vector<double> pnt_vec;
+
+	ros::param::get(param_str + "position", pos_vec);
+	ros::param::get(param_str + "point", pnt_vec);
+	// ros::param::get("/bag_config_node/sensor_0/position/y", y);
+	// ros::param::get("/bag_config_node/sensor_0/position/z", z);
+	// cout << "x = " << x << endl;
+	// cout << "y = " << y << endl;
+	// cout << "z = " << z << endl;
+	position = {pos_vec[0], pos_vec[1], pos_vec[2]};
+	point = {pnt_vec[0], pnt_vec[1], pnt_vec[2]};
+	// ros::param::get(param_str + "point", pnt_arr);
+	// cout << "SENSOR " << sid << endl;
+	// position = {pos_arr[0], pos_arr[1], pos_arr[2]};
+	// point = {pnt_arr[0], pnt_arr[1], pnt_arr[2]};
+	// cout << "Sensor " << sid << " Position = " << position[0] << "  " << position[1] << "  " << position[2] << endl;
+	// cout << "Sensor " << sid << " Point = " << point[0] << "  " << point[1] << "  " << point[2] << endl;
+	// cout << "Sensor " << sid << " Point = " << pnt_arr.size() << endl;
+
+	// if(id == 0) // Sensor 0
+	// {
+	// 	position = {0.4142, 1.1214, 0.4052};
+	// 	point = {0, 0, 0};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {0.5030, 1.3292, 0.4275};
+	// 	}
+	// }
+	// else if(id == 1) // Sensor 1
+	// {
+	// 	// position = {0.4142, -1.1214, 0.4052};
+	// 	position = {0, 0.5, 0.5};
+	// 	point = {0, 0, 0};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {0.3772, -1.0889, 0.5566};
+	// 	}
+	// }
+	// else if(id == 2) // Sensor 2
+	// {
+	// 	position = {0.75, 0.7242, 0.9479};
+	// 	point = {0, 0, 0};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {0.7265, 0.8349, 0.7876};
+	// 	}
+	// }
+	// else if(id == 3) // Sensor 3
+	// {
+	// 	position = {0.75, -0.7242, 0.9479};
+	// 	point = {0, 0, 0};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {0.8038, -0.5408, 0.7220};
+	// 	}
+	// }
+	// else if(id == 4) // Sensor 4
+	// {
+	// 	position = {1.00, 0.00, 1.1934};
+	// 	point = {0, 0, 0};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {1.0862, 0.0319, 1.0626};
+	// 	}
+	// }
+
+	// else if(id == 5) // Sensor 5
+	// {
+	// 	position = {1.772, 1.0353, 0.5978};
+	// 	point = {2.2720, 0.8453, -0.8453};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {1.7286, 1.0696, 0.9556};
+	// 	}
+	// }
+	// else if(id == 6) // Sensor 6
+	// {
+	// 	position = {2.772, 1.0353, 0.5978};
+	// 	point = {2.2720, 0.8453, -0.8453};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {3.0489, 0.9003, 0.9013};
+	// 	}
+	// }
+	// else if(id == 7) // Sensor 7
+	// {
+	// 	position = {1.272, 0.00, 1.1955};
+	// 	point = {2.2720, 0.8453, -0.8453};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {1.3445, -0.0063, 1.267};
+	// 	}
+	// }
+	// else if(id == 8) // Sensor 8
+	// {
+	// 	position = {3.272, 0.00, 1.1955};
+	// 	point = {2.2720, 0.8453, -0.8453};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {3.2515, -0.0124, 1.3445};
+	// 	}
+	// }
+	// else if(id == 9) // Sensor 9
+	// {
+	// 	position = {2.272, -1.0353, 0.5978};
+	// 	point = {2.2720, 0.8453, -0.8453};
+	// 	if(sim == true)
+	// 	{
+	// 		position_true = {2.4129, -0.8936, 0.6649};
+	// 	}
+	// }
 
 	frame = get_sensor_frame(position, point, c); // Compute the sensor's pointing frame
 

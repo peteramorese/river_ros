@@ -4,6 +4,7 @@
 #include "MARKER.hpp"
 #include "oriDetermine.h"
 #include "matrix.h"
+#include "ros/ros.h"
 
 #include <armadillo>
 using namespace arma;

@@ -18,6 +18,14 @@ SYSTEM::SYSTEM(bool s, vector<bool> p)
 
 	set_sim_flag(s); // Propagate the software run mode setting
 
+	double cov_thrsh;
+	double time_thrsh;
+	ros::param::get("/bag_config_node/thresholds/covariance", cov_thrsh);
+	ros::param::get("/bag_config_node/thresholds/time", time_thrsh);
+
+	stop_est_cov_thrsh = cov_thrsh;
+	stop_est_time = time_thrsh;
+
 	cout << "DONE" << endl;
 };
 
@@ -140,7 +148,7 @@ void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 }
 
 
-void SYSTEM::calibrate(BAG cal, std::vector<int> s)
+void SYSTEM::calibrate(std::vector<int> s)
 {
 	// Utilizes an Extended Kalman Filter (EKF) to calibrate the sensor positions for each sensor in the network
 	// 
@@ -249,16 +257,12 @@ void SYSTEM::calibrate(BAG cal, std::vector<int> s)
 		// cout << "DONE" << endl;
 	}
 
-	set_sensors_min(s); // Assign the minimal sensor object
 }
 
 
-void SYSTEM::calibrate_pickup(BAG cal)
+void SYSTEM::calibrate_pickup()
 {
 	// Selects the correct sensors to calibrate (Sensors 0 - 4)
-	// 
-	// Inputs:
-	// 		cal - [BAG] Series of markers with known locations used to calibrate sensors 0 - 4
 	// 
 
 	std::vector<int> s;
@@ -268,16 +272,21 @@ void SYSTEM::calibrate_pickup(BAG cal)
 		s.push_back(i);
 	}
 
-	calibrate(cal, s);
+	bool run_cal_p;
+	ros::param::get("/bag_config_node/run_calibration/pickup", run_cal_p);
+
+	if(run_cal_p)
+	{
+		calibrate(s);
+	}
+
+	set_sensors_min(s); // Assign the minimal sensor object
 }
 
 
-void SYSTEM::calibrate_dropoff(BAG cal)
+void SYSTEM::calibrate_dropoff()
 {
 	// Selects the correct sensors to calibrate (Sensors 5 - 9)
-	// 
-	// Inputs:
-	// 		cal - [BAG] Series of markers with known locations used to calibrate sensors 5 - 9
 	// 
 
 	std::vector<int> s;
@@ -287,7 +296,15 @@ void SYSTEM::calibrate_dropoff(BAG cal)
 		s.push_back(5 + i);
 	}
 
-	calibrate(cal, s);
+	bool run_cal_d;
+	ros::param::get("/bag_config_node/run_calibration/dropoff", run_cal_d);
+
+	if(run_cal_d)
+	{
+		calibrate(s);
+	}
+
+	set_sensors_min(s); // Assign the minimal sensor object
 }
 
 

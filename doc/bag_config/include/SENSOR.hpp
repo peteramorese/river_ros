@@ -7,6 +7,7 @@
 #include "BAG.hpp"
 #include "DATA.hpp"
 #include "EKF.hpp"
+#include "ros/ros.h"
 
 #include <armadillo>
 using namespace arma;
