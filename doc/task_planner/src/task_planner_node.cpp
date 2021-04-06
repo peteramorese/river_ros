@@ -4,6 +4,7 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "river_ros/PlanExecute_srv.h"
+#include "river_ros/PlanningQuery_srv.h"
 #include "river_ros/BagConfigPoseArray_msg.h"
 #include "geometry_msgs/Pose.h"
 #include "edge.h"
@@ -185,6 +186,10 @@ int main(int argc, char **argv){
 	EnvironmentSub env_sub_container;
 	ros::Subscriber environment_TP_sub = TP_NH.subscribe("bag_config/bag_configs", 1, &EnvironmentSub::envSubCB, &env_sub_container);
 
+	// Service client to send a planning query to manipulator node
+	ros::ServiceClient plan_query_client = TP_NH.serviceClient<river_ros::PlanningQuery_srv>("task_planner/planning_query");
+	river_ros::PlanningQuery_srv plan_query_srv_msg;
+
 	// Hard code drop off locations here
 	// std::vector<std::vector<double>> drop_off_locs = {{-.4, .4, 0}, {-.4, -.4, 0}, {-.4, .4, .5}, {-.4, -.4, .5}};
 	DropOffLocations drop_off_locs(1); // Maximum radius set in ctor
@@ -215,12 +220,12 @@ int main(int argc, char **argv){
 
 			if (env_sub_container.bags_found) {
 
-				std::vector<std::string> var_labels_1 = {"safep", "safed"};
+				std::vector<std::string> var_labels_1; // = {"safep", "safed"};
 				std::vector<std::string> var_labels_2 = {"ee"};
 				std::vector<std::string> var_labels_3 = {"true", "false"};
-				std::vector<std::string> domain_pickup = {"safep"};
+				std::vector<std::string> domain_pickup; //= {"safep"};
 				std::vector<std::string> domain_loc_p;
-				std::vector<std::string> domain_dropoff = {"safed"};
+				std::vector<std::string> domain_dropoff; // = {"safed"};
 				std::vector<std::string> domain_loc_d;
 				std::vector<std::string> domain_goal;
 				
@@ -258,6 +263,7 @@ int main(int argc, char **argv){
 							env_sub_container.mapSize(label);
 							domain_goal.push_back(label);
 							domain_dropoff.push_back(label);
+							domain_loc_d.push_back(label);
 							var_labels_1.push_back(label);
 							var_labels_2.push_back(label);
 						} else {
@@ -282,10 +288,34 @@ int main(int argc, char **argv){
 					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
 					env_sub_container.pose_array_copy.domain_labels.push_back(label);
 					env_sub_container.mapSize(label);
+					domain_goal.push_back(label);
 					domain_dropoff.push_back(label);
 					domain_loc_d.push_back(label);
 					var_labels_1.push_back(label);
 					var_labels_2.push_back(label);
+				}
+
+				{
+					// safep pose
+					geometry_msgs::Pose temp_pose;
+					temp_pose.position.x = 0.2;
+					temp_pose.position.y = 0.0;
+					temp_pose.position.z = 0.7;
+					temp_pose.orientation.x = 0;
+					temp_pose.orientation.y = 0;
+					temp_pose.orientation.z = 0;
+					temp_pose.orientation.w = 1;
+					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
+					env_sub_container.pose_array_copy.domain_labels.push_back("safep");
+					env_sub_container.mapSize("safep");
+					domain_pickup.push_back("safep");
+					var_labels_1.push_back("safep");
+					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
+					env_sub_container.pose_array_copy.domain_labels.push_back("safed");
+					env_sub_container.mapSize("safed");
+					domain_dropoff.push_back("safed");
+					var_labels_1.push_back("safed");
+
 				}
 
 				State::setStateDimension(var_labels_1, 0);
@@ -308,7 +338,7 @@ int main(int argc, char **argv){
 					sprintf(label_buffer, "obj%dLoc", i-1); // object labels are 0 index
 					label = label_buffer;
 					State::setStateDimensionLabel(i, label);
-					obj_loc_group.push_back(label);
+					obj_loc_group.push_back(label); // use this for obj labels
 					which_blocking.push_back(true); // object locations are blocking
 					init_set_state.push_back(var_labels_2[i]);
 				}
@@ -525,16 +555,6 @@ int main(int argc, char **argv){
 				p1.setCondJunctType(Condition::SIMPLE, Condition::CONJUNCTION);
 				p1.setLabel("p1");
 
-				/* Transition System
-				   Edge TS_graph(true);
-				   TransitionSystem<BlockingState> TS(&TS_graph);
-				   TS.setConditions(cond_ptrs);
-				   TS.setInitState(&init_state);
-				   TS.generate();
-				//TS_graph.print();
-				TS.print();
-				*/
-
 				/* DFA */
 				Edge TS(true);
 				Edge DFA(true);
@@ -558,41 +578,119 @@ int main(int argc, char **argv){
 				prodsys.print();
 				std::vector<int> plan;
 				float pathlength;
-				prodsys.plan(plan);
+				prodsys.plan();
 
-				std::cout<<"\n";
-				std::cout<<"Path: ";
-				for (int i=0; i<plan.size(); ++i) {
-					std::cout<<" -> "<<plan[i];	
+				std::vector<BlockingState*> state_sequence;
+				std::vector<std::string> action_sequence;
+				prodsys.getPlan(state_sequence, action_sequence);
+
+				std::cout<<"Action sequence: \n";
+				for (int i=0; i<action_sequence.size(); ++i) {
+					std::cout<<" -> "<<action_sequence[i];
 				}
 				std::cout<<"\n";
 
-				/* Service Client */
-				/*
-				   ros::ServiceClient client1 = TP_NH.serviceClient<std_srvs::SetBool>("end_effector_status");
-				//ros::ServiceClient client2 = TP_NH.serviceClient<river_ros::PlanExecute>("planex_service");
-				std_srvs::SetBool eef_status;
-				//river_ros::PlanExecute planex_service;
-				eef_status.request.data = true;
-				//planex_service.request.plan_and_execute = true;
-				if (client1.call(eef_status)) {
-				std::cout<<"i recieved: "<<eef_status.response.success<<std::endl;
-				std::cout<<"with message: "<<eef_status.response.message<<std::endl;
-				} else {
-				ROS_ERROR("Failed to call service");
-				return 1;
+				/* EXECUTE PLAN */
+				bool succeeded = true;
+				for (int i=0; i<action_sequence.size(); ++i) {
+					if (i == 0) {
+						// First query should send the environment, there
+						// is no need to keep updating the env after the 
+						// first query
+						plan_query_srv_msg.request.setup_environment = true;
+						plan_query_srv_msg.request.bag_poses.poses.resize(env_sub_container.num_bags);
+						for (int i=0; i<env_sub_container.num_bags; ++i)  {
+							plan_query_srv_msg.request.bag_poses.poses[i].position.x = env_sub_container.pose_array_copy.pose_array.poses[i].position.x;
+							plan_query_srv_msg.request.bag_poses.poses[i].position.y = env_sub_container.pose_array.poses[i].position.x;
+							plan_query_srv_msg.request.bag_poses.poses[i].position.z = env_sub_container.pose_array.poses[i].position.x;
+							plan_query_srv_msg.request.bag_poses.poses[i].orientation.x = env_sub_container.pose_array.poses[i].orientation.x;
+							plan_query_srv_msg.request.bag_poses.poses[i].orientation.y = env_sub_container.pose_array.poses[i].orientation.y;
+							plan_query_srv_msg.request.bag_poses.poses[i].orientation.z = env_sub_container.pose_array.poses[i].orientation.z;
+							plan_query_srv_msg.request.bag_poses.poses[i].orientation.w = env_sub_container.pose_array.poses[i].orientation.w;
+						}
+					} else {
+						plan_query_srv_msg.request.setup_environment = false;
+					}
+					if (action_sequence[i] == "move") {
+						plan_query_srv_msg.request.pickup_object = "none";
+						plan_query_srv_msg.request.drop_object = "none";
+						int pose_ind = label_ind_map[state_sequence[i+1]->getVar("eeLoc")];
+						plan_query_srv_msg.request.manipulator_pose.pose.position.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.x;
+						plan_query_srv_msg.request.manipulator_pose.pose.position.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.y;
+						plan_query_srv_msg.request.manipulator_pose.pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z;
+						plan_query_srv_msg.request.manipulator_pose.pose.orientation.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.x;
+						plan_query_srv_msg.request.manipulator_pose.pose.orientation.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.y;
+						plan_query_srv_msg.request.manipulator_pose.pose.orientation.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.z;
+						plan_query_srv_msg.request.manipulator_pose.pose.orientation.w = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.w;
+
+						if (plan_query_client.call(plan_query_srv_msg)) {
+							std::cout<<"i recieved: "<<plan_query_srv_msg.response.success<<std::endl;
+							if (!plan_query_srv_msg.response.success) {
+								succeeded = false;
+								break;
+							}
+						} else {
+							ROS_ERROR("Failed to call service");
+						}
+
+
+					} else if (action_sequence[i] == "release") {
+						plan_query_srv_msg.request.pickup_object = "none";
+						std::string arg_dim_label;
+						// Look up the pre state for the action (ind i)
+						// to find which dimension has variable "ee"
+						bool found = state_sequence[i]->argFindGroup("ee", "object locations", arg_dim_label);
+						if (found) {
+							plan_query_srv_msg.request.drop_object = arg_dim_label;
+						} else {
+							ROS_ERROR_NAMED("task_planner_node", "state sequence does not match action sequence");
+						}
+						if (plan_query_client.call(plan_query_srv_msg)) {
+							std::cout<<"i recieved: "<<plan_query_srv_msg.response.success<<std::endl;
+							if (!plan_query_srv_msg.response.success) {
+								succeeded = false;
+								break;
+							}
+
+						} else {
+							ROS_ERROR("Failed to call service");
+						}
+
+					} else if (action_sequence[i] == "grasp") {
+						plan_query_srv_msg.request.drop_object = "none";
+						std::string arg_dim_label;
+						// Look up the post state for the action (ind i+1)
+						// to find which dimension has variable "ee"
+						bool found = state_sequence[i+1]->argFindGroup("ee", "object locations", arg_dim_label);
+						if (found) {
+							plan_query_srv_msg.request.pickup_object = arg_dim_label;
+						} else {
+							ROS_ERROR_NAMED("task_planner_node", "state sequence does not match action sequence");
+						}
+						if (plan_query_client.call(plan_query_srv_msg)) {
+							std::cout<<"i recieved: "<<plan_query_srv_msg.response.success<<std::endl;
+							if (!plan_query_srv_msg.response.success) {
+								succeeded = false;
+								break;
+							}
+
+						} else {
+							ROS_ERROR("Failed to call service");
+						}
+
+					} else if (action_sequence[i] == "translate") {
+						plan_query_srv_msg.request.pickup_object = "none";
+						plan_query_srv_msg.request.drop_object = "none";
+					}
 				}
-				*/
-				/*
-				   if (client2.call(planex_service)) {
-				   std::cout<<"i recieved: "<<planex_service.response.status<<std::endl;
-				   } else {
-				   ROS_ERROR("Failed to call service");
-				   return 1;
-				   }
-				   */
+
+
 				ros::WallDuration(5.0);
-				status_TP_msg.data = "execute_success";
+				if (succeeded) {
+					status_TP_msg.data = "execute_success";
+				} else {
+					status_TP_msg.data = "execute_failure_fatal";
+				}
 				status_TP_pub.publish(status_TP_msg);
 				ros::spinOnce();
 				std::cout<<"made it out phew"<<std::endl;

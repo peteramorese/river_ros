@@ -396,7 +396,7 @@ void ProductSystem<T>::print() const {
 */
 
 template <class T>
-bool ProductSystem<T>::plan(std::vector<int>& plan) const {
+bool ProductSystem<T>::plan(std::vector<int>& plan) {
 	Astar planner;
 	planner.setGraph(graph_product);
 	// The init state is 0 by construction
@@ -409,40 +409,88 @@ bool ProductSystem<T>::plan(std::vector<int>& plan) const {
 	}
 	std::vector<int> reverse_plan;
 	float pathlength;
-	bool success;
-	success = planner.searchDijkstra(reverse_plan, pathlength);
+	plan_found = planner.searchDijkstra(reverse_plan, pathlength);
 	plan.resize(reverse_plan.size());
 	for (int i=0; i<reverse_plan.size(); ++i) {
 		plan[i] = reverse_plan[reverse_plan.size()-1-i];
+	}
+	stored_plan = plan;
+	return plan_found;
+}
+
+template <class T>
+bool ProductSystem<T>::plan() {
+	Astar planner;
+	planner.setGraph(graph_product);
+	// The init state is 0 by construction
+	planner.setVInit(0);
+	for (int i=0; i<is_accepting.size(); ++i) {
+		if (is_accepting[i]) {
+			std::cout<<"Info: Planning with goal state index: "<<i<<"\n";
+			planner.setVGoal(i);
+		}
+	}
+	std::vector<int> reverse_plan;
+	float pathlength;
+	plan_found = planner.searchDijkstra(reverse_plan, pathlength);
+	stored_plan.resize(reverse_plan.size());
+	for (int i=0; i<reverse_plan.size(); ++i) {
+		stored_plan[i] = reverse_plan[reverse_plan.size()-1-i];
+	}
+	return plan_found;
+}
+
+template <class T>
+void ProductSystem<T>::getPlan(std::vector<T*>& state_sequence, std::vector<std::string>& action_sequence) {
+	if (plan_found) {
+		state_sequence.resize(stored_plan.size());
+		action_sequence.resize(stored_plan.size()-1);
+		auto prod_heads = graph_product->getHeads();
+		int i;
+		for (i=0; i<stored_plan.size(); ++i) {
+			auto currptr = prod_heads[stored_plan[i]]->adjptr;	
+			T* curr_state = prod_state_map[stored_plan[i]];
+			state_sequence[i] = curr_state;
+			while (currptr != nullptr) {
+				if (currptr->nodeind == stored_plan[i+1]) {
+					action_sequence[i] = currptr->label;
+					break;
+				}
+				currptr = currptr->adjptr;
+			}
+		}
+		state_sequence[state_sequence.size()] = prod_state_map[stored_plan[state_sequence.size()]];
+	} else {
+		std::cout<<"Error: Plan was not found, cannot return plan\n";
 	}
 }
 
 template <class T>
 void ProductSystem<T>::print() const {
 	if (prod_state_map.size() > 1) {
-	for (int i=0; i<prod_state_map.size(); ++i) {
-		T* curr_state = prod_state_map[i];
-		std::vector<int> list_nodes; 
-		std::vector<std::string> list_actions; 
-		graph_product->returnListNodes(i, list_nodes);
-		graph_product->returnListLabels(i, list_actions);
-		std::cout<<"Product State "<<i<<": ";
-		std::vector<std::string> state_i; 
-		curr_state->getState(state_i);
-		for (int ii=0; ii<state_i.size(); ++ii) {
-			std::cout<<state_i[ii]<<", ";
-		}
-		std::cout<<"connects to:\n";
-		for (int ii=0; ii<list_nodes.size(); ++ii) {
-			T* con_state = prod_state_map[list_nodes[ii]];
-			std::cout<<"   ~>Product State "<<list_nodes[ii]<<": ";
-			con_state->getState(state_i);
-			for (int iii=0; iii<state_i.size(); ++iii) {
-				std::cout<<state_i[iii]<<", ";
+		for (int i=0; i<prod_state_map.size(); ++i) {
+			T* curr_state = prod_state_map[i];
+			std::vector<int> list_nodes; 
+			std::vector<std::string> list_actions; 
+			graph_product->returnListNodes(i, list_nodes);
+			graph_product->returnListLabels(i, list_actions);
+			std::cout<<"Product State "<<i<<": ";
+			std::vector<std::string> state_i; 
+			curr_state->getState(state_i);
+			for (int ii=0; ii<state_i.size(); ++ii) {
+				std::cout<<state_i[ii]<<", ";
 			}
-			std::cout<<" with action: "<<list_actions[ii]<<"\n";
+			std::cout<<"connects to:\n";
+			for (int ii=0; ii<list_nodes.size(); ++ii) {
+				T* con_state = prod_state_map[list_nodes[ii]];
+				std::cout<<"   ~>Product State "<<list_nodes[ii]<<": ";
+				con_state->getState(state_i);
+				for (int iii=0; iii<state_i.size(); ++iii) {
+					std::cout<<state_i[iii]<<", ";
+				}
+				std::cout<<" with action: "<<list_actions[ii]<<"\n";
+			}
 		}
-	}
 	} else {
 		std::cout<<"Warning: Transition has not been generated, or has failed to generate. Cannot print\n";
 	}

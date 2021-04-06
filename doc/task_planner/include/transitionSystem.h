@@ -38,7 +38,7 @@ class ProductSystem : public TransitionSystem<T> {
 	private:
 		//std::vector<SimpleCondition*> propositions;
 		std::unordered_map<std::string, SimpleCondition*> propositions;
-		bool automaton_init;
+		bool automaton_init, plan_found;
 		Edge* graph_DA;
 		Edge* graph_product;
 		std::vector<T*> prod_state_map;
@@ -51,6 +51,7 @@ class ProductSystem : public TransitionSystem<T> {
 		std::vector<bool> prod_state_added;
 		std::vector<bool> is_DA_accepting;
 		std::vector<bool> is_accepting;
+		std::vector<int> stored_plan;
 		void safeAddProdState(T* add_state, int add_state_ind, float weight, const std::string& action);
 	public:
 		ProductSystem(Edge* graph_TS_, Edge* graph_DA_, Edge* graph_product_);
@@ -61,7 +62,9 @@ class ProductSystem : public TransitionSystem<T> {
 		void addAutomatonAcceptingStateIndex(int accepting_DA_state_);
 		bool parseLabelAndEval(const std::string& label, const T* state);
 		void compose();
-		bool plan(std::vector<int>& plan) const;
+		bool plan(std::vector<int>& plan);
+		bool plan();
+		void getPlan(std::vector<T*>& state_sequence, std::vector<std::string>& action_sequence);
 		void print() const;
 };
 

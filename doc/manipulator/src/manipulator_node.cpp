@@ -23,14 +23,81 @@
 
 class PlanningQuerySrv {
 	private:
+		moveit::planning_interface::MoveGroupInterface* move_group_ptr;
+		moveit::planning_interface::PlanningSceneInterface* planning_scene_interface_ptr;
 	public:
-		bool planningQuery_serviceCB(geometry_msgs::PoseStamped::
+		PlanningQuerySrv(moveit::planning_interface::MoveGroupInterface* move_group_ptr_, moveit::planning_interface::PlanningSceneInterface* psi_ptr_) : 
+			move_group_ptr(move_group_ptr_),
+       			planning_scene_interface_ptr(psi_ptr_)	{
+		}
+		bool planQuery_serviceCB(river_ros::PlanningQuery_srv::Request &request, river_ros::PlanningQuery_srv::Response &response) {
+			ROS_INFO_NAMED("manipulator_node", "Recieved Planning Query");
+
+			if (request.setup_environment) {
+				std::vector<moveit_msgs::CollisionObject> col_obj_vec;
+				colObjVec.resize(request.bag_poses.size());
+
+
+
+				for (int i=0; i<request.bag_poses.size(); ++i) {
+					col_obj_vec[i].id = request.bag_labels[i];
+					col_obj_vec[i].primitives.resize(1);
+					col_obj_vec[i].primitives[0].type = colObjVec[0].primitives[0].BOX;
+					col_obj_vec[i].primitives[0].dimensions.resize(3);
+					col_obj_vec[i].primitives[0].dimensions[0] = .09;
+					col_obj_vec[i].primitives[0].dimensions[1] = .1;
+					col_obj_vec[i].primitives[0].dimensions[2] = .12;
+
+					col_obj_vec[i].primitive_poses.resize(1);
+					col_obj_vec[i].primitive_poses[0].position.x = request.bag_poses[i].position.x
+					col_obj_vec[i].primitive_poses[0].position.y = request.bag_poses[i].position.y
+					col_obj_vec[i].primitive_poses[0].position.z = request.bag_poses[i].position.z
+					col_obj_vec[i].primitive_poses[0].orientation.x =  request.bag_poses[i].orientation.x
+					col_obj_vec[i].primitive_poses[0].orientation.y = request.bag_poses[i].orientation.y
+					col_obj_vec[i].primitive_poses[0].orientation.z = request.bag_poses[i].orientation.z
+					col_obj_vec[i].primitive_poses[0].orientation.w = request.bag_poses[i].orientation.w
+					col_obj_vec[i].operation = colObjVec[0].ADD;
+				}
+				planning_scene_interface_ptr->applyCollisionObjects(col_obj_vec);
+				planning_scene_interface_ptr->addCollisionObjects(col_obj_vec);
+			}
+
+			if (request.pickup_object != "none") {
+				move_group_ptr->attachObject(request.pickup_object,"ee_link");
+				response.success = true;
+			} else if (request.drop_object != "none") {
+				move_group_ptr->detachObject(request.drop_object,"ee_link");
+				response.success = true;
+			} else {
+				geometry_msgs::Pose pose;
+				moveit::planning_interface::MoveGroupInterface::Plan plan;
+
+				move_group_ptr->setStartStateToCurrentState();
+				move_group_ptr->setPoseTarget(request.manipulator_pose);
+				move_group_ptr->setPlanningTime(5.0);
+
+				bool success = false;
+				for (int ii=0; ii<4; ii++){
+					move_group_ptr->plan(plan);
+					success = (move_group_ptr->execute(plan)==moveit::planning_interface::MoveItErrorCode::SUCCESS);
+					if (success){
+						ROS_INFO_NAMED("manipulator_node"<"Completed planning on iteration: %d",ii);
+						break;
+					}
+					ros::WallDuration(1.0).sleep();
+				}
+				response.success = success;
+			}
+
+
+
+		}
 	
 };
 
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "manipulator_node");
-	ros::NodeHandle node_handle("~");
+	ros::NodeHandle M_NH("~");
 	ros::AsyncSpinner spinner(1);
 	spinner.start();
 
@@ -63,7 +130,7 @@ int main(int argc, char **argv) {
 
 	//from tutorial
 
-	if (!node_handle.getParam("planning_plugin", planner_plugin_name))
+	if (!M_NH.getParam("planning_plugin", planner_plugin_name))
 		ROS_FATAL_STREAM("Could not find planner plugin name");
 	try
 	{
@@ -77,7 +144,7 @@ int main(int argc, char **argv) {
 	try
 	{
 		planner_instance.reset(planner_plugin_loader->createUnmanagedInstance(planner_plugin_name));
-		if (!planner_instance->initialize(robot_model, node_handle.getNamespace()))
+		if (!planner_instance->initialize(robot_model, M_NH.getNamespace()))
 			ROS_FATAL_STREAM("Could not initialize planner instance");
 		ROS_INFO_STREAM("Using planner '" << planner_instance->getDescription() << "'");
 	}
@@ -146,54 +213,14 @@ int main(int argc, char **argv) {
 	colObjVec[1].primitive_poses[0].orientation.w = 1;
 	colObjVec[1].operation = colObjVec[0].ADD;
 
-	planning_scene_interface.applyCollisionObjects(colObjVec);
-	planning_scene_interface.addCollisionObjects(colObjVec);
+	planning_scene_interface.applyCollisionObjects(col_obj_vec);
+	planning_scene_interface.addCollisionObjects(col_obj_vec);
 	move_group.attachObject("eef","ee_link");
-
 	move_group.setEndEffectorLink("ee_link");
-	geometry_msgs::Pose initpose;
-	moveit::planning_interface::MoveGroupInterface::Plan initplan;
 
+	PlanningQuerySrv plan_query_srv_container(&move_group, &planning_scene_interface);
 
-
-	float posmat[3][3];
-	posmat[0][0] = .4;
-	posmat[0][1] = .4;
-	posmat[0][2] = .4; 
-	posmat[1][0] = .4; 
-	posmat[1][1] = -.4;
-	posmat[1][2] = .6;
-	posmat[2][0] = .4; 
-	posmat[2][1] = 0; 
-	posmat[2][2] = .8; 
-
-
-
-	initpose.position.x = posmat[i][0];
-	initpose.position.y = posmat[i][1];
-	initpose.position.z = posmat[i][2];
-	/*
-	   tf2::Quaternion initorient;
-	   initorient.setRPY(0, 0, 0);
-	   initpose.orientation = tf2::toMsg(initorient); 
-	   */
-	initpose.orientation.x = 1;
-	initpose.orientation.y = 0;
-	initpose.orientation.z = 0;
-	initpose.orientation.w = 0;
-	move_group.setStartStateToCurrentState();
-	move_group.setPoseTarget(initpose);
-	move_group.setPlanningTime(5.0);
-
-	for (int ii=0; ii<4; ii++){
-		move_group.plan(initplan);
-		bool success = (move_group.execute(initplan)==moveit::planning_interface::MoveItErrorCode::SUCCESS);
-		if (success){
-			std::cout<<"	Completed on planning iteration: "<<ii<<"/4\n";
-			break;
-		}
-		ros::WallDuration(1.0).sleep();
-	}
+	ros::ServiceServer plan_query_service = M_NH.advertiseService("task_planner/planning_query", &PlanningQuerySrv::planQuery_serviceCB, &plan_query_srv_container);
 
 	return 0;
 }
