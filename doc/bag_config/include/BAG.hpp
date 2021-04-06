@@ -2,10 +2,13 @@
 #define BAG_H
 
 #include "MARKER.hpp"
+#include "ERRORS.hpp"
 #include "oriDetermine.h"
 #include "matrix.h"
 #include "ros/ros.h"
 
+#include <string>
+#include <sstream>
 #include <armadillo>
 using namespace arma;
 

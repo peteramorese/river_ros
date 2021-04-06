@@ -2,20 +2,20 @@
 # bag_config_node Parameters: /bag_config_node/
 software_mode: "Flight"
 run_calibration: 
-  pickup: False
+  pickup: True
   dropoff: False
 plot:
   calibration: True
   estimation: False
 thresholds:
   covariance: 0.01
-  time: 30
+  time: 10
 calibrator:
   pickup:
     num_markers: 3
-    marker_0: [1.00, 0.75, -0.9]
-    marker_1: [-1.00, 0.75, -0.9]
-    marker_2: [0.75, 0.89, 0.92]
+    marker_0: [0, 0.1, -0.05]
+    marker_1: [0, -0.05, 0.1]
+    marker_2: [0, 0.05, 0.1]
     marker_3: [0.75, 0.89, 0.92]
     marker_4: [0.75, 0.89, 0.92]
     marker_5: [0.75, 0.89, 0.92]

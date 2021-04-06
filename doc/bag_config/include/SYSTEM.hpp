@@ -6,6 +6,7 @@
 #include "SENSOR.hpp"
 #include "SENSOR_MIN.hpp"
 #include "EKF.hpp"
+#include "ERRORS.hpp"
 
 #include "oriDetermine.h"
 #include "matrix.h"
@@ -19,6 +20,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <chrono>
 #include <armadillo>

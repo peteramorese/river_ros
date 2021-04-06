@@ -15,6 +15,7 @@ set(SOURCES
 	src/main.cpp
 	src/BAG.cpp
 	src/DATA.cpp
+	src/ERRORS.cpp
 	src/MARKER.cpp
 	src/SENSOR.cpp
 	src/SENSOR_MIN.cpp

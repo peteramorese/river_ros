@@ -8,6 +8,7 @@ using namespace arma;
 BAG::BAG()
 {
 	string param_str;
+	stringstream warn_str;
 	vector<double> pos_vec;
 
 	// ros::VP_string remappings;
@@ -26,7 +27,16 @@ BAG::BAG()
 		}
 
 		param_str = param_str + to_string(marker.mid);
-		ros::param::get(param_str, pos_vec);
+		if(ros::param::has(param_str))
+		{
+			ros::param::get(param_str, pos_vec);
+		}
+		else
+		{
+			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
+			ERROR(warn_str.str());
+		}
+
 		marker.position = {pos_vec[0], pos_vec[1], pos_vec[2]};
 
 		markers.push_back(marker);

@@ -3,12 +3,15 @@
 
 #include "CONSTANTS.hpp"
 #include "CORE.hpp"
+#include "ERRORS.hpp"
 #include "MARKER.hpp"
 #include "BAG.hpp"
 #include "DATA.hpp"
 #include "EKF.hpp"
 #include "ros/ros.h"
 
+#include <string>
+#include <sstream>
 #include <armadillo>
 using namespace arma;
 

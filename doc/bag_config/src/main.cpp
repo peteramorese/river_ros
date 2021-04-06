@@ -3,12 +3,10 @@ using namespace std;
 
 // roslaunch river_ros bag_config_node.launch
 
-int main()
+int main(int argc, char **argv)
 {
 
-ros::VP_string remappings;
-remappings.push_back(std::make_pair("", ""));
-ros::init(remappings, "calibrator");
+ros::init(argc, argv, "estimator");
 
 // ros::NodeHandle nh;
 
@@ -19,20 +17,60 @@ ros::init(remappings, "calibrator");
 // {
 // 	cout << "Key " << i << " " << keys[i] << endl;
 // }
+string param_str;
+stringstream warn_str;
 
+// Software Mode
 string sw_mode;
-ros::param::get("/bag_config_node/software_mode", sw_mode);
-// cout << "sw " << ros::param::has("/bag_config_node/software_mode") << endl;
+bool sim;
+param_str = "/bag_config_node/software_mode";
+if(ros::param::has(param_str))
+{
+	ros::param::get(param_str, sw_mode);
+}
+else
+{
+	sw_mode = "Flight";
+	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << sw_mode << ".";
+	WARNING(warn_str.str());
+}
 
-bool sim = false; // Set software mode
 if(sw_mode == "Simulation")
 {
 	sim = true;
 }
+else
+{
+	sim = false;
+}
 
-bool plot_c; bool plot_e;
-ros::param::get("/bag_config_node/plot/calibration", plot_c);
-ros::param::get("/bag_config_node/plot/estimation", plot_e);
+// Plot Calibration Results
+bool plot_c;
+param_str = "/bag_config_node/plot/calibration";
+if(ros::param::has(param_str))
+{
+	ros::param::get(param_str, plot_c);
+}
+else
+{
+	plot_c = false;
+	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << plot_c << ".";
+	WARNING(warn_str.str());
+}
+
+// Plot Estimation Results
+bool plot_e;
+param_str = "/bag_config_node/plot/estimation";
+if(ros::param::has(param_str))
+{
+	ros::param::get(param_str, plot_e);
+}
+else
+{
+	plot_e = false;
+	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << plot_e << ".";
+	WARNING(warn_str.str());
+}
 
 vector<bool> plot = {plot_c, plot_e}; // Set the plot flags
 
@@ -41,14 +79,33 @@ SYSTEM system(sim, plot);
 
 int cal_num_mark;
 bool run_cal_p;
-ros::param::get("/bag_config_node/run_calibration/pickup", run_cal_p);
+param_str = "/bag_config_node/run_calibration/pickup";
+if(ros::param::has(param_str))
+{
+	ros::param::get(param_str, run_cal_p);
+}
+else
+{
+	run_cal_p = false;
+	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << run_cal_p << ".";
+	WARNING(warn_str.str());
+}
 
 if(run_cal_p)
 {
 	cout << "Press Enter to calibrate." << endl;
 	cin.get();
 
-	ros::param::get("/bag_config_node/calibrator/pickup/num_markers", cal_num_mark);
+	param_str = "/bag_config_node/calibrator/pickup/num_markers";
+	if(ros::param::has(param_str))
+	{
+		ros::param::get(param_str, cal_num_mark);
+	}
+	else
+	{
+		warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
+		ERROR(warn_str.str());
+	}
 
 	BAG calibrator_pickup(cal_num_mark);
 
@@ -59,7 +116,16 @@ if(run_cal_p)
 	{
 		param_str = "/bag_config_node/calibrator/pickup/marker_";
 		param_str = param_str + to_string(i);
-		ros::param::get(param_str, m_i_pos);
+		if(ros::param::has(param_str))
+		{
+			ros::param::get(param_str, m_i_pos);
+		}
+		else
+		{
+			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
+			ERROR(warn_str.str());
+		}
+
 		calibrator_pickup.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
 	}
 
@@ -70,14 +136,34 @@ if(run_cal_p)
 system.calibrate_pickup();
 
 bool run_cal_d;
-ros::param::get("/bag_config_node/run_calibration/dropoff", run_cal_d);
+param_str = "/bag_config_node/run_calibration/dropoff";
+if(ros::param::has(param_str))
+{
+	ros::param::get(param_str, run_cal_d);
+}
+else
+{
+	run_cal_d = false;
+	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << plot_e << ".";
+	WARNING(warn_str.str());
+}
+
 
 if(run_cal_d)
 {
 	cout << "Press Enter to calibrate." << endl;
 	cin.get();
 
-	ros::param::get("/bag_config_node/calibrator/dropoff/num_markers", cal_num_mark);
+	param_str = "/bag_config_node/calibrator/dropoff/num_markers";
+	if(ros::param::has(param_str))
+	{
+		ros::param::get(param_str, cal_num_mark);
+	}
+	else
+	{
+		warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
+		ERROR(warn_str.str());
+	}
 
 	BAG calibrator_dropoff(cal_num_mark);
 
@@ -88,7 +174,16 @@ if(run_cal_d)
 	{
 		param_str = "/bag_config_node/calibrator/dropoff/marker_";
 		param_str = param_str + to_string(i);
-		ros::param::get(param_str, m_i_pos);
+		if(ros::param::has(param_str))
+		{
+			ros::param::get(param_str, m_i_pos);
+		}
+		else
+		{
+			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
+			ERROR(warn_str.str());
+		}
+
 		calibrator_dropoff.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
 	}
 
@@ -105,6 +200,4 @@ for(int i = 0; i < bag.markers.size(); i++)
 	cout << "Marker " << bag.markers[i].mid << " Position = " << bag.markers[i].position[0] << "  " << bag.markers[i].position[1] << "  " << bag.markers[i].position[2] << endl;
 }
 
-}
-
-
+} // End main()

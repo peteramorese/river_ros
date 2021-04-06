@@ -20,8 +20,32 @@ SYSTEM::SYSTEM(bool s, vector<bool> p)
 
 	double cov_thrsh;
 	double time_thrsh;
-	ros::param::get("/bag_config_node/thresholds/covariance", cov_thrsh);
-	ros::param::get("/bag_config_node/thresholds/time", time_thrsh);
+	string param_str;
+	stringstream warn_str;
+
+	param_str = "/bag_config_node/thresholds/covariance";
+	if(ros::param::has(param_str))
+	{
+		ros::param::get(param_str, cov_thrsh);
+	}
+	else
+	{
+		cov_thrsh = 0.05;
+		warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << cov_thrsh << ".";
+		WARNING(warn_str.str());
+	}
+
+	param_str = "/bag_config_node/thresholds/time";
+	if(ros::param::has(param_str))
+	{
+		ros::param::get(param_str, time_thrsh);
+	}
+	else
+	{
+		time_thrsh = 60;
+		warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << time_thrsh << " [s].";
+		WARNING(warn_str.str());
+	}
 
 	stop_est_cov_thrsh = cov_thrsh;
 	stop_est_time = time_thrsh;
@@ -128,7 +152,7 @@ void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 		e = sensors[curr_sid].ekf.back();
 		run_upd = false; // Assume the update does not need to be run
 
-		for(int j = 0; j < 3; j++)
+		for(int j = 0; j < cnst.n; j++)
 		{
 			if(2.0*sqrt(e.P(j, j)) > stop_est_cov_thrsh)
 			{
@@ -142,7 +166,7 @@ void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 		}
 		else
 		{
-			// cout << "Sensor " << curr_sid << " has met the covariance requirements, no longer updating." << endl;
+			sensors[curr_sid].ekf.push_back(e);
 		}
 	}
 }
@@ -164,9 +188,9 @@ void SYSTEM::calibrate(std::vector<int> s)
 	std::chrono::duration<double> delta_time;
 	bool time_stop = false;
 
-	ros::VP_string remappings;
-	remappings.push_back(std::make_pair("chatter", "chatter"));
-	ros::init(remappings, "calibrator");
+	// ros::VP_string remappings;
+	// remappings.push_back(std::make_pair("chatter", "chatter"));
+	// ros::init(remappings, "calibrator");
 
 	ros::NodeHandle cal_nh;
 
