@@ -10,9 +10,9 @@ BAG::BAG()
 	string param_str;
 	vector<double> pos_vec;
 
-	ros::VP_string remappings;
-	remappings.push_back(std::make_pair("", ""));
-	ros::init(remappings, "bag");
+	// ros::VP_string remappings;
+	// remappings.push_back(std::make_pair("", ""));
+	// ros::init(remappings, "bag");
 
 	for(int i = 0; i < 6; i++)
 	{
@@ -25,22 +25,12 @@ BAG::BAG()
 			marker.plate = 1;
 		}
 
-		param_str = param_str + to_string(marker.mid) + "/";
+		param_str = param_str + to_string(marker.mid);
 		ros::param::get(param_str, pos_vec);
 		marker.position = {pos_vec[0], pos_vec[1], pos_vec[2]};
 
 		markers.push_back(marker);
 	}
-
-	// markers[0].position = {0, 0, 0.5*height};
-	// markers[1].position = {0, 0, -0.5*height};
-	// markers[2].position = {0.5*width, 0, 0};
-	// markers[3].position = {-0.5*width, 0, 0};
-	// markers[4].position = {0, 0.5*length, 0};
-	// markers[5].position = {0, -0.5*length, 0};
-
-	// move_bag(zeros<vec>(3), 0, 0, 0);
-
 };
 
 BAG::BAG(int nm)

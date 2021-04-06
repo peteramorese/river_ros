@@ -9,7 +9,7 @@ SYSTEM::SYSTEM(bool s, vector<bool> p)
 {
 	// Initializes the SYSTEM object
 
-	cout << "Initializing System...\t\t";
+	cout << "Initializing System...\t\t" << endl;
 
 	sim = s; // Set the software run mode
 	plot = p; // Set the plotting flag

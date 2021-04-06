@@ -58,20 +58,25 @@ void SENSOR::init_default_sensor(int id, CORE c)
 	string param_str = "/bag_config_node/sensor_";
 	param_str = param_str + to_string(sid) + "/";
 
-	// cout << sid << " " << param_str << endl;
+	cout << sid << " " << param_str << endl;
 
 	vector<double> pos_vec;
 	vector<double> pnt_vec;
 
-	ros::param::get(param_str + "position", pos_vec);
-	ros::param::get(param_str + "point", pnt_vec);
+	// ros::param::get(param_str + "position", pos_vec);
+	// ros::param::get(param_str + "point", pnt_vec);
+	// position = {pos_vec[0], pos_vec[1], pos_vec[2]};
+	// point = {pnt_vec[0], pnt_vec[1], pnt_vec[2]};
+
+
+	position = {1, 0, 0};
+	point = {0, 0, 0};
 	// ros::param::get("/bag_config_node/sensor_0/position/y", y);
 	// ros::param::get("/bag_config_node/sensor_0/position/z", z);
 	// cout << "x = " << x << endl;
 	// cout << "y = " << y << endl;
 	// cout << "z = " << z << endl;
-	position = {pos_vec[0], pos_vec[1], pos_vec[2]};
-	point = {pnt_vec[0], pnt_vec[1], pnt_vec[2]};
+	
 	// ros::param::get(param_str + "point", pnt_arr);
 	// cout << "SENSOR " << sid << endl;
 	// position = {pos_arr[0], pos_arr[1], pos_arr[2]};

@@ -32,9 +32,9 @@ class SYSTEM
 {
 public:
 	bool sim; // Flag defining simulation run mode
-	vector<bool> plot = {false, false}; // Flag to plot results {calibration, estimation}
+	vector<bool> plot; // Flag to plot results {calibration, estimation}
 
-	SYSTEM(bool s = true, vector<bool> p = {false, false});
+	SYSTEM(bool s, vector<bool> p = {false, false});
 	~SYSTEM();
 	void set_sim_flag(bool);
 	void assign_bag(BAG);

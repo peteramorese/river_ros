@@ -3,9 +3,9 @@
 software_mode: "Flight"
 run_calibration: 
   pickup: False
-  dropoff: True
+  dropoff: False
 plot:
-  calibration: False
+  calibration: True
   estimation: False
 thresholds:
   covariance: 0.01
@@ -29,12 +29,12 @@ calibrator:
     marker_5: [0.75, 0.89, 0.92]
 bag_def:
   num_markers: 6
+  marker_0: [1.1, 2.2, 3.3]
   marker_1: [1.1, 2.2, 3.3]
   marker_2: [1.1, 2.2, 3.3]
   marker_3: [1.1, 2.2, 3.3]
   marker_4: [1.1, 2.2, 3.3]
   marker_5: [1.1, 2.2, 3.3]
-  marker_6: [1.1, 2.2, 3.3]
 sensor_0:
   position: [0.4142, 0.8, 0.4052]
   point: [0, 0, -0.508]
