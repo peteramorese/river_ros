@@ -125,8 +125,15 @@ if(run_cal_p)
 			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
 			ERROR(warn_str.str());
 		}
-
-		calibrator_pickup.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
+		if(m_i_pos.size() == 3)
+		{
+			calibrator_pickup.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
+		}
+		else
+		{
+			warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
+			ERROR(warn_str.str());
+		}
 	}
 
 	system.assign_bag(calibrator_pickup);
@@ -183,8 +190,15 @@ if(run_cal_d)
 			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
 			ERROR(warn_str.str());
 		}
-
-		calibrator_dropoff.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
+		if(m_i_pos.size() == 3)
+		{
+			calibrator_dropoff.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
+		}
+		else
+		{
+			warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
+			ERROR(warn_str.str());
+		}
 	}
 
 	system.assign_bag(calibrator_dropoff);

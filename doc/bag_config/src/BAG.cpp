@@ -36,8 +36,15 @@ BAG::BAG()
 			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
 			ERROR(warn_str.str());
 		}
-
-		marker.position = {pos_vec[0], pos_vec[1], pos_vec[2]};
+		if(pos_vec.size() == 3)
+		{
+			marker.position = {pos_vec[0], pos_vec[1], pos_vec[2]};
+		}
+		else
+		{
+			warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
+			ERROR(warn_str.str());
+		}
 
 		markers.push_back(marker);
 	}

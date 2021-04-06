@@ -63,6 +63,7 @@ void SENSOR::init_default_sensor(int id, CORE c)
 	vector<double> pos_vec;
 	vector<double> pnt_vec;
 
+	// Sensor Position
 	param_str = param_substr + "position";
 	if(ros::param::has(param_str))
 	{
@@ -73,7 +74,17 @@ void SENSOR::init_default_sensor(int id, CORE c)
 		warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
 		ERROR(warn_str.str());
 	}
+	if(pos_vec.size() == 3)
+	{
+		position = {pos_vec[0], pos_vec[1], pos_vec[2]};
+	}
+	else
+	{
+		warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
+		ERROR(warn_str.str());
+	}
 
+	// Sensor Pointing
 	param_str = param_substr + "point";
 	if(ros::param::has(param_str))
 	{
@@ -84,9 +95,15 @@ void SENSOR::init_default_sensor(int id, CORE c)
 		warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
 		ERROR(warn_str.str());
 	}
-
-	position = {pos_vec[0], pos_vec[1], pos_vec[2]};
-	point = {pnt_vec[0], pnt_vec[1], pnt_vec[2]};
+	if(pnt_vec.size() == 3)
+	{
+		point = {pnt_vec[0], pnt_vec[1], pnt_vec[2]};
+	}
+	else
+	{
+		warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
+		ERROR(warn_str.str());
+	}
 
 	frame = get_sensor_frame(position, point, c); // Compute the sensor's pointing frame
 
