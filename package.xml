@@ -62,6 +62,11 @@
 
   <test_depend>rosunit</test_depend>
 
+ <!--run_depend>message_runtime</run_depend>
+ <run_depend>rospy</run_depend> -->
+ <exec_depend>rosserial_msgs</exec_depend>
+ <exec_depend>diagnostic_msgs</exec_depend>
+ <exec_depend>python3-serial</exec_depend>
 	  
   <!-- The *depend tags are used to specify dependencies -->
   <!-- Dependencies can be catkin packages or system dependencies -->
