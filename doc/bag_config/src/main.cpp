@@ -157,8 +157,8 @@ sys.calibrate_dropoff();
 cout << "Press enter to continue to estimation." << endl;
 cin.get();
 
-while(ros::ok())
-{
+//while(ros::ok())
+//{
 	BAG bag;
 	sys.assign_bag(bag);
 
@@ -172,7 +172,7 @@ while(ros::ok())
 	sys.run_estimator_dropoff();
 	cout << "Done estimating dropoff location." << endl;
 
-}
+//}
 
 // for(int i = 0; i < bag.markers.size(); i++)
 // {
