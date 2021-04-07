@@ -170,7 +170,6 @@ cin.get();
 	cout << "Center: " << bag_p.center[0] << "  " << bag_p.center[1] << "  " << bag_p.center[2] << endl;
 	sys.assign_bag(bag_p);
 
-
 	if(verbose)
 	{
 		cout << "Estimating pickup location." << endl;

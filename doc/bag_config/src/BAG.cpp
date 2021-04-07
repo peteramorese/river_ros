@@ -297,7 +297,7 @@ std::vector<std::pair<double[3], int>> BAG::get_coords_3D()
 		coords_3D[i].first[2] = markers[mark[i]].position[2];
 		coords_3D[i].second = markers[mark[i]].mid;
 
-		cout << "i = " << mark[i] << "  " << coords_3D[i].second << endl;
+//		cout << "i = " << mark[i] << "  " << coords_3D[i].second << endl;
 	}
 
 	return coords_3D;

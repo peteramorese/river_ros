@@ -605,6 +605,7 @@ void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
 				{
 					cout << "Estimating Marker " << cur_mid << endl;
 				}
+
 				Y.push_back(Y_k);
 				bag.markers[cur_mid].estimate_pos(Y, sensors_min, core, cnst);
 
