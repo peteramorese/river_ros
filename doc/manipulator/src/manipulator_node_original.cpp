@@ -2,8 +2,7 @@
 #include <ros/callback_queue.h>
 #include <iostream>
 #include "geometry_msgs/PoseStamped.h"
-#include "river_ros/PlanningQuery_msg.h"
-#include "river_ros/PlanningQueryStatus_msg.h"
+#include "river_ros/PlanningQuery_srv.h"
 #include <vector>
 
 #include <pluginlib/class_loader.h>
@@ -23,65 +22,106 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 
-class PlanningQueryExecute {
+class PlanningQuerySrv {
 	private:
-		std::string& action;
+		moveit::planning_interface::MoveGroupInterface* move_group_ptr;
+		moveit::planning_interface::PlanningSceneInterface* planning_scene_interface_ptr;
 	public:
-		std::vector<moveit_msgs::CollisionObject> col_obj_vec;
-		geometry_msgs::PoseStamped arm_pose;
-		std::string pickup_obj;
-		std::string drop_obj;
-		PlanningQueryExecute(std::string& action_) : action(action_) {
-			action = "none";
+		PlanningQuerySrv(moveit::planning_interface::MoveGroupInterface* move_group_ptr_, moveit::planning_interface::PlanningSceneInterface* psi_ptr_) : 
+			move_group_ptr(move_group_ptr_),
+       			planning_scene_interface_ptr(psi_ptr_)	{
 		}
-		void planQueryExecuteCB(const river_ros::PlanningQuery_msg::ConstPtr& plan_query) {
-			action = plan_query->action;
+		bool planQuery_serviceCB(river_ros::PlanningQuery_srv::Request &request, river_ros::PlanningQuery_srv::Response &response) {
 			std::cout<<"\n";
 			std::cout<<"HELLO"<<std::endl;
 			std::cout<<"\n";
 			ROS_INFO_NAMED("manipulator_node", "Recieved Planning Query");
 
-			if (plan_query->setup_environment) {
-				col_obj_vec.resize(plan_query->bag_poses.poses.size());
+			if (request.setup_environment) {
+				std::vector<moveit_msgs::CollisionObject> col_obj_vec;
+				col_obj_vec.resize(request.bag_poses.poses.size());
 
-				for (int i=0; i<plan_query->bag_poses.poses.size(); ++i) {
+				for (int i=0; i<request.bag_poses.poses.size(); ++i) {
 					col_obj_vec[i].header.frame_id = "base_link";
-					std::string temp_str = plan_query->bag_labels[i];
-					col_obj_vec[i].id = temp_str;
+					col_obj_vec[i].id = request.bag_labels[i];
 					col_obj_vec[i].primitives.resize(1);
 					col_obj_vec[i].primitives[0].type = col_obj_vec[i].primitives[0].BOX;
-					// Bag definition
 					col_obj_vec[i].primitives[0].dimensions.resize(3);
 					col_obj_vec[i].primitives[0].dimensions[0] = .4127;
 					col_obj_vec[i].primitives[0].dimensions[1] = .2286;
 					col_obj_vec[i].primitives[0].dimensions[2] = .2413;
 
 					col_obj_vec[i].primitive_poses.resize(1);
-					std::cout<<" i see : "<<plan_query->bag_poses.poses[i].position.x<<std::endl;
-					std::cout<<" i see : "<<plan_query->bag_poses.poses[i].position.y<<std::endl;
-					std::cout<<" i see : "<<plan_query->bag_poses.poses[i].position.z<<std::endl;
-					col_obj_vec[i].primitive_poses[0].position.x = plan_query->bag_poses.poses[i].position.x;
-					col_obj_vec[i].primitive_poses[0].position.y = plan_query->bag_poses.poses[i].position.y;
-					col_obj_vec[i].primitive_poses[0].position.z = plan_query->bag_poses.poses[i].position.z;
-					col_obj_vec[i].primitive_poses[0].orientation.x = plan_query->bag_poses.poses[i].orientation.x;
-					col_obj_vec[i].primitive_poses[0].orientation.y = plan_query->bag_poses.poses[i].orientation.y;
-					col_obj_vec[i].primitive_poses[0].orientation.z = plan_query->bag_poses.poses[i].orientation.z;
-					col_obj_vec[i].primitive_poses[0].orientation.w = plan_query->bag_poses.poses[i].orientation.w;
+					std::cout<<" i see : "<<request.bag_poses.poses[i].position.x<<std::endl;
+					std::cout<<" i see : "<<request.bag_poses.poses[i].position.y<<std::endl;
+					std::cout<<" i see : "<<request.bag_poses.poses[i].position.z<<std::endl;
+					col_obj_vec[i].primitive_poses[0].position.x = request.bag_poses.poses[i].position.x;
+					col_obj_vec[i].primitive_poses[0].position.y = request.bag_poses.poses[i].position.y;
+					col_obj_vec[i].primitive_poses[0].position.z = request.bag_poses.poses[i].position.z;
+					col_obj_vec[i].primitive_poses[0].orientation.x = request.bag_poses.poses[i].orientation.x;
+					col_obj_vec[i].primitive_poses[0].orientation.y = request.bag_poses.poses[i].orientation.y;
+					col_obj_vec[i].primitive_poses[0].orientation.z = request.bag_poses.poses[i].orientation.z;
+					col_obj_vec[i].primitive_poses[0].orientation.w = request.bag_poses.poses[i].orientation.w;
 					col_obj_vec[i].operation = col_obj_vec[i].ADD;
 				}
+				planning_scene_interface_ptr->applyCollisionObjects(col_obj_vec);
+				planning_scene_interface_ptr->addCollisionObjects(col_obj_vec);
+				std::cout<<"done setting up env"<<std::endl;
 			}
-			arm_pose.pose.position.x = plan_query->manipulator_pose.pose.position.x;
-			arm_pose.pose.position.y = plan_query->manipulator_pose.pose.position.y;
-			arm_pose.pose.position.z = plan_query->manipulator_pose.pose.position.z;
-			arm_pose.pose.orientation.x = plan_query->manipulator_pose.pose.orientation.x;
-			arm_pose.pose.orientation.y = plan_query->manipulator_pose.pose.orientation.y;
-			arm_pose.pose.orientation.z = plan_query->manipulator_pose.pose.orientation.z;
-			arm_pose.pose.orientation.w = plan_query->manipulator_pose.pose.orientation.w;
-			pickup_obj = plan_query->pickup_object;
-			drop_obj = plan_query->drop_object;
 
+			if (request.pickup_object != "none") {
+				std::cout<<"attaching obj"<<std::endl;
+				std::string obj_label = request.pickup_object;
+				move_group_ptr->attachObject(obj_label,"ee_link");
+				response.success = true;
+				std::cout<<"done attaching obj"<<std::endl;
+			} else if (request.drop_object != "none") {
+				std::cout<<"done droppin obj"<<std::endl;
+				std::string obj_label = request.drop_object;
+				move_group_ptr->detachObject(obj_label);
+				response.success = true;
+				std::cout<<"done dropping obj"<<std::endl;
+			} else {
+				std::cout<<"moving"<<std::endl;
+				geometry_msgs::Pose pose;
+				moveit::planning_interface::MoveGroupInterface::Plan plan;
 
+				move_group_ptr->setStartStateToCurrentState();
+
+				// Convert from PoseStamed to Pose
+				pose.position.x = request.manipulator_pose.pose.position.x;
+				pose.position.y = request.manipulator_pose.pose.position.y;
+				pose.position.z = request.manipulator_pose.pose.position.z;
+				pose.orientation.x = request.manipulator_pose.pose.orientation.x;
+				pose.orientation.y = request.manipulator_pose.pose.orientation.y;
+				pose.orientation.z = request.manipulator_pose.pose.orientation.z;
+				pose.orientation.w = request.manipulator_pose.pose.orientation.w;
+				move_group_ptr->setPoseTarget(pose);
+				move_group_ptr->setPlanningTime(5.0);
+
+				ROS_INFO_NAMED("manipulator_node", "Reference frame: %s", move_group_ptr->getPlanningFrame().c_str());
+				std::cout<<"moving to x: "<< request.manipulator_pose.pose.position.x<<std::endl;
+				std::cout<<"moving to y: "<< request.manipulator_pose.pose.position.y<<std::endl;
+				std::cout<<"moving to z: "<< request.manipulator_pose.pose.position.z<<std::endl;
+				bool success = false;
+				for (int ii=0; ii<4; ii++){
+					std::cout<<"before plan"<<std::endl;
+					//move_group_ptr->plan(plan);
+					std::cout<<"before execute"<<std::endl;
+					//success = (move_group_ptr->execute(plan)==moveit::planning_interface::MoveItErrorCode::SUCCESS);
+					success = (move_group_ptr->move()==moveit::planning_interface::MoveItErrorCode::SUCCESS);
+					if (success){
+						ROS_INFO_NAMED("manipulator_node","Completed planning on iteration: %d",ii);
+						break;
+					}
+					ros::WallDuration(1.0).sleep();
+				}
+				response.success = success;
+				std::cout<<"done moving"<<std::endl;
+			}
+			return true;
 		}
+	
 };
 
 int main(int argc, char **argv) {
@@ -151,17 +191,6 @@ int main(int argc, char **argv) {
 
 	ROS_INFO_NAMED("manipulator_node", "Reference frame: %s", move_group.getPlanningFrame().c_str());
 
-	// Subscribe to the planning query
-	std::string action_PQE;
-	PlanningQueryExecute ex_PQ_sub_container(action_PQE);
-	ros::Subscriber plan_query_execute_sub = M_NH.subscribe("task_planner/planning_query", 1, &PlanningQueryExecute::planQueryExecuteCB, &ex_PQ_sub_container);
-
-	// Publish action and success to planning query
-	river_ros::PlanningQueryStatus_msg plan_query_status_msg;
-	plan_query_status_msg.action = "idle";
-	ros::Publisher plan_query_pub = M_NH.advertise<river_ros::PlanningQueryStatus_msg>("planning_query_ex_status", 1);
-	plan_query_pub.publish(plan_query_status_msg);
-
 	int Nobj=2;
 	//int Nobj=1;
 	std::vector<moveit_msgs::CollisionObject> colObjVec;
@@ -220,84 +249,9 @@ int main(int argc, char **argv) {
 	move_group.attachObject("eef","ee_link");
 	move_group.setEndEffectorLink("ee_link");
 
-	ros::Rate r(3);
-	while (ros::ok()) {
-		r.sleep();
-		plan_query_status_msg.success = "in progress";
-		plan_query_pub.publish(plan_query_status_msg);
-		std::cout<<"action_PQE entering: "<<action_PQE<<std::endl;
-		if (action_PQE == "begin") {
-			std::cout<<"published working ... "<<std::endl;
-			plan_query_status_msg.action = "working";
-			plan_query_pub.publish(plan_query_status_msg);
-			planning_scene_interface.applyCollisionObjects(ex_PQ_sub_container.col_obj_vec);
-			planning_scene_interface.addCollisionObjects(ex_PQ_sub_container.col_obj_vec);
-			std::cout<<"done setting up env"<<std::endl;
-			if (ex_PQ_sub_container.pickup_obj != "none") {
-				std::cout<<"attaching obj"<<std::endl;
-				move_group.attachObject(ex_PQ_sub_container.pickup_obj,"ee_link");
-				plan_query_status_msg.success = "success";
-				plan_query_pub.publish(plan_query_status_msg);
-				std::cout<<"done attaching obj"<<std::endl;
-			} else if (ex_PQ_sub_container.drop_obj != "none") {
-				std::cout<<"done droppin obj"<<std::endl;
-				move_group.detachObject(ex_PQ_sub_container.drop_obj);
-				plan_query_status_msg.success = "success";
-				plan_query_pub.publish(plan_query_status_msg);
-				std::cout<<"done dropping obj"<<std::endl;
-			} else {
-				std::cout<<"moving"<<std::endl;
-				geometry_msgs::Pose pose;
-				moveit::planning_interface::MoveGroupInterface::Plan plan;
+	PlanningQuerySrv plan_query_srv_container(&move_group, &planning_scene_interface);
 
-				// Convert from PoseStamped to Pose
-				pose.position.x = ex_PQ_sub_container.arm_pose.pose.position.x;
-				pose.position.y = ex_PQ_sub_container.arm_pose.pose.position.y;
-				pose.position.z = ex_PQ_sub_container.arm_pose.pose.position.z;
-				pose.orientation.x = ex_PQ_sub_container.arm_pose.pose.orientation.x;
-				pose.orientation.y = ex_PQ_sub_container.arm_pose.pose.orientation.y;
-				pose.orientation.z = ex_PQ_sub_container.arm_pose.pose.orientation.z;
-				pose.orientation.w = ex_PQ_sub_container.arm_pose.pose.orientation.w;
-
-				move_group.setStartStateToCurrentState();
-				move_group.setPoseTarget(pose);
-				move_group.setPlanningTime(5.0);
-
-				ROS_INFO_NAMED("manipulator_node", "Reference frame: %s", move_group.getPlanningFrame().c_str());
-				std::cout<<"moving to x: "<< ex_PQ_sub_container.arm_pose.pose.position.x<<std::endl;
-				std::cout<<"moving to y: "<< ex_PQ_sub_container.arm_pose.pose.position.y<<std::endl;
-				std::cout<<"moving to z: "<< ex_PQ_sub_container.arm_pose.pose.position.z<<std::endl;
-				bool success;
-				for (int ii=0; ii<4; ii++){
-					std::cout<<"before plan"<<std::endl;
-					//move_group_ptr->plan(plan);
-					std::cout<<"before execute"<<std::endl;
-					//success = (move_group_ptr->execute(plan)==moveit::planning_interface::MoveItErrorCode::SUCCESS);
-					success = (move_group.move()==moveit::planning_interface::MoveItErrorCode::SUCCESS);
-					if (success){
-						ROS_INFO_NAMED("manipulator_node","Completed planning on iteration: %d",ii);
-						break;
-					}
-					ros::WallDuration(1.0).sleep();
-				}
-				if (success) {
-					plan_query_status_msg.success = "success";
-					plan_query_pub.publish(plan_query_status_msg);
-				} else {
-					plan_query_status_msg.success = "failed";
-					plan_query_pub.publish(plan_query_status_msg);
-				}
-				std::cout<<"done moving"<<std::endl;
-			}
-			ros::Rate r_PQE(10);
-			while (ros::ok() && action_PQE != "idle") {
-				std::cout<<"action_PQE: "<<action_PQE<<std::endl;
-				r_PQE.sleep();
-			}
-
-		}
-
-	}
+	ros::ServiceServer plan_query_service = M_NH.advertiseService("task_planner/planning_query", &PlanningQuerySrv::planQuery_serviceCB, &plan_query_srv_container);
 
 	ros::waitForShutdown();
 	return 0;

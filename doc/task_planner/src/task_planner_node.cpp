@@ -4,7 +4,9 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "river_ros/PlanExecute_srv.h"
+#include "river_ros/PlanningQuery_msg.h"
 #include "river_ros/PlanningQuery_srv.h"
+#include "river_ros/PlanningQueryStatus_msg.h"
 #include "river_ros/BagConfigPoseArray_msg.h"
 #include "geometry_msgs/Pose.h"
 #include "edge.h"
@@ -53,8 +55,8 @@ struct EnvironmentSub {
 			pose_array_copy.pose_array.poses.resize(num_bags);
 			for (int i=0; i<num_bags; ++i)  {
 				pose_array_copy.pose_array.poses[i].position.x = env_pose_array->pose_array.poses[i].position.x;
-				pose_array_copy.pose_array.poses[i].position.y = env_pose_array->pose_array.poses[i].position.x;
-				pose_array_copy.pose_array.poses[i].position.z = env_pose_array->pose_array.poses[i].position.x;
+				pose_array_copy.pose_array.poses[i].position.y = env_pose_array->pose_array.poses[i].position.y;
+				pose_array_copy.pose_array.poses[i].position.z = env_pose_array->pose_array.poses[i].position.z;
 				pose_array_copy.pose_array.poses[i].orientation.x = env_pose_array->pose_array.poses[i].orientation.x;
 				pose_array_copy.pose_array.poses[i].orientation.y = env_pose_array->pose_array.poses[i].orientation.y;
 				pose_array_copy.pose_array.poses[i].orientation.z = env_pose_array->pose_array.poses[i].orientation.z;
@@ -68,6 +70,21 @@ struct EnvironmentSub {
 	void mapSize(const std::string& label) {
 		label_ind_map[label] = pose_array_copy.pose_array.poses.size() - 1;
 	}
+};
+
+class PlanningQuerySub {
+	private:
+		std::string& action;
+		std::string& success;
+	public:
+		PlanningQuerySub(std::string& action_, std::string& success_) : action(action_), success(success_) {
+			action = "none";
+			success = "none";
+		}
+		void planQueryCB(const river_ros::PlanningQueryStatus_msg::ConstPtr& plan_query) {
+			action = plan_query->action;
+			success = plan_query->success;
+		}
 };
 
 class DropOffLocations {
@@ -187,8 +204,21 @@ int main(int argc, char **argv){
 	ros::Subscriber environment_TP_sub = TP_NH.subscribe("bag_config/bag_configs", 1, &EnvironmentSub::envSubCB, &env_sub_container);
 
 	// Service client to send a planning query to manipulator node
-	ros::ServiceClient plan_query_client = TP_NH.serviceClient<river_ros::PlanningQuery_srv>("task_planner/planning_query");
+	ros::ServiceClient plan_query_client = TP_NH.serviceClient<river_ros::PlanningQuery_srv>("manipulator_node/task_planner/planning_query");
 	river_ros::PlanningQuery_srv plan_query_srv_msg;
+
+	// Publish the current planning query
+	/*
+	ros::Publisher plan_query_pub = TP_NH.advertise<river_ros::PlanningQuery_msg>("manipulator_node/task_planner/planning_query", 1);
+	river_ros::PlanningQuery_msg plan_query_msg;
+	plan_query_msg.action = "idle";
+
+	// Subscribe to the planning query to check if it is done or not
+	std::string action_PQ;
+	std::string success_PQ;
+	PlanningQuerySub plan_query_sub_container(action_PQ, success_PQ);
+	ros::Subscriber plan_query_sub = TP_NH.subscribe("manipulator_node/planning_query_ex_status", 1, &PlanningQuerySub::planQueryCB, &plan_query_sub_container);
+	*/
 
 	// Hard code drop off locations here
 	// std::vector<std::vector<double>> drop_off_locs = {{-.4, .4, 0}, {-.4, -.4, 0}, {-.4, .4, .5}, {-.4, -.4, .5}};
@@ -339,6 +369,7 @@ int main(int argc, char **argv){
 					label = label_buffer;
 					State::setStateDimensionLabel(i, label);
 					obj_loc_group.push_back(label); // use this for obj labels
+					std::cout<<" ADDING OBJECT: "<<label<<std::endl;
 					which_blocking.push_back(true); // object locations are blocking
 					init_set_state.push_back(var_labels_2[i]);
 				}
@@ -584,13 +615,104 @@ int main(int argc, char **argv){
 				std::vector<std::string> action_sequence;
 				prodsys.getPlan(state_sequence, action_sequence);
 
-				std::cout<<"Action sequence: \n";
+				std::cout<<"Plan sequence: \n";
 				for (int i=0; i<action_sequence.size(); ++i) {
-					std::cout<<" -> "<<action_sequence[i];
+					std::cout<<"\n";
+					state_sequence[i]->print();
+					std::cout<<" -> "<<action_sequence[i]<<"\n";
+					state_sequence[i+1]->print();
+					std::cout<<"\n";
+
 				}
 				std::cout<<"\n";
 
 				/* EXECUTE PLAN */
+				/*
+				bool succeeded = true;
+				for (int i=0; i<action_sequence.size(); ++i) {
+					// Trigger for starting a planning query
+					plan_query_msg.action = "begin";
+					if (i == 0) {
+						// First query should send the environment, there
+						// is no need to keep updating the env after the 
+						// first query
+						plan_query_msg.setup_environment = true;
+						plan_query_msg.bag_poses.poses.resize(env_sub_container.num_bags);
+						plan_query_msg.bag_labels = obj_loc_group;
+						for (int i=0; i<env_sub_container.num_bags; ++i)  {
+							plan_query_msg.bag_poses.poses[i].position.x = env_sub_container.pose_array_copy.pose_array.poses[i].position.x;
+							plan_query_msg.bag_poses.poses[i].position.y = env_sub_container.pose_array_copy.pose_array.poses[i].position.y;
+							plan_query_msg.bag_poses.poses[i].position.z = env_sub_container.pose_array_copy.pose_array.poses[i].position.z;
+							plan_query_msg.bag_poses.poses[i].orientation.x = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.x;
+							plan_query_msg.bag_poses.poses[i].orientation.y = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.y;
+							plan_query_msg.bag_poses.poses[i].orientation.z = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.z;
+							plan_query_msg.bag_poses.poses[i].orientation.w = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.w;
+						}
+					} else {
+						plan_query_msg.setup_environment = false;
+					}
+					if (action_sequence[i] == "move") {
+						plan_query_msg.pickup_object = "none";
+						plan_query_msg.drop_object = "none";
+						int pose_ind = env_sub_container.label_ind_map[state_sequence[i+1]->getVar("eeLoc")];
+						plan_query_msg.manipulator_pose.pose.position.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.x;
+						plan_query_msg.manipulator_pose.pose.position.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.y;
+						plan_query_msg.manipulator_pose.pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z + .3;
+						plan_query_msg.manipulator_pose.pose.orientation.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.x;
+						plan_query_msg.manipulator_pose.pose.orientation.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.y;
+						plan_query_msg.manipulator_pose.pose.orientation.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.z;
+						plan_query_msg.manipulator_pose.pose.orientation.w = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.w;
+
+					} else if (action_sequence[i] == "release") {
+						plan_query_msg.pickup_object = "none";
+						std::string arg_dim_label;
+						// Look up the pre state for the action (ind i)
+						// to find which dimension has variable "ee"
+						bool found = state_sequence[i]->argFindGroup("ee", "object locations", arg_dim_label);
+						if (found) {
+							plan_query_msg.drop_object = arg_dim_label;
+						} else {
+							ROS_ERROR_NAMED("task_planner_node", "state sequence does not match action sequence");
+						}
+
+					} else if (action_sequence[i] == "grasp") {
+						plan_query_msg.drop_object = "none";
+						std::string arg_dim_label;
+						// Look up the post state for the action (ind i+1)
+						// to find which dimension has variable "ee"
+						bool found = state_sequence[i+1]->argFindGroup("ee", "object locations", arg_dim_label);
+						if (found) {
+							plan_query_msg.pickup_object = arg_dim_label;
+						} else {
+							ROS_ERROR_NAMED("task_planner_node", "state sequence does not match action sequence");
+						}
+
+					} else if (action_sequence[i] == "translate") {
+						plan_query_msg.pickup_object = "none";
+						plan_query_msg.drop_object = "none";
+					}
+					plan_query_pub.publish(plan_query_msg);
+					ros::spinOnce();
+					ros::Rate r_PQ(1);
+					std::cout<<"first action_PQ: "<<action_PQ<<std::endl;
+					r_PQ.sleep(); // Give the manipulator node time to see begin
+					ros::WallDuration(3.0);
+					while (ros::ok() && action_PQ == "working") {
+						ros::spinOnce();
+						std::cout<<"action_PQ: "<<action_PQ<<std::endl;
+						r_PQ.sleep();	
+					}
+					plan_query_msg.action = "idle";
+					plan_query_pub.publish(plan_query_msg);
+					ros::spinOnce();
+					if (success_PQ != "success") {
+						ROS_WARN_NAMED("task_planner_node", "Plan & execute failed");
+						break;
+					}
+				}
+				*/
+
+
 				bool succeeded = true;
 				for (int i=0; i<action_sequence.size(); ++i) {
 					if (i == 0) {
@@ -599,25 +721,28 @@ int main(int argc, char **argv){
 						// first query
 						plan_query_srv_msg.request.setup_environment = true;
 						plan_query_srv_msg.request.bag_poses.poses.resize(env_sub_container.num_bags);
+						plan_query_srv_msg.request.bag_labels = obj_loc_group;
 						for (int i=0; i<env_sub_container.num_bags; ++i)  {
 							plan_query_srv_msg.request.bag_poses.poses[i].position.x = env_sub_container.pose_array_copy.pose_array.poses[i].position.x;
-							plan_query_srv_msg.request.bag_poses.poses[i].position.y = env_sub_container.pose_array.poses[i].position.x;
-							plan_query_srv_msg.request.bag_poses.poses[i].position.z = env_sub_container.pose_array.poses[i].position.x;
-							plan_query_srv_msg.request.bag_poses.poses[i].orientation.x = env_sub_container.pose_array.poses[i].orientation.x;
-							plan_query_srv_msg.request.bag_poses.poses[i].orientation.y = env_sub_container.pose_array.poses[i].orientation.y;
-							plan_query_srv_msg.request.bag_poses.poses[i].orientation.z = env_sub_container.pose_array.poses[i].orientation.z;
-							plan_query_srv_msg.request.bag_poses.poses[i].orientation.w = env_sub_container.pose_array.poses[i].orientation.w;
+							plan_query_srv_msg.request.bag_poses.poses[i].position.y = env_sub_container.pose_array_copy.pose_array.poses[i].position.y;
+							plan_query_srv_msg.request.bag_poses.poses[i].position.z = env_sub_container.pose_array_copy.pose_array.poses[i].position.z;
+							plan_query_srv_msg.request.bag_poses.poses[i].orientation.x = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.x;
+							plan_query_srv_msg.request.bag_poses.poses[i].orientation.y = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.y;
+							plan_query_srv_msg.request.bag_poses.poses[i].orientation.z = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.z;
+							plan_query_srv_msg.request.bag_poses.poses[i].orientation.w = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.w;
 						}
 					} else {
 						plan_query_srv_msg.request.setup_environment = false;
 					}
+					std::cout<<"working on action: "<<action_sequence[i]<<std::endl;
 					if (action_sequence[i] == "move") {
 						plan_query_srv_msg.request.pickup_object = "none";
 						plan_query_srv_msg.request.drop_object = "none";
-						int pose_ind = label_ind_map[state_sequence[i+1]->getVar("eeLoc")];
+						std::cout<<" MOVING TO:"<< state_sequence[i+1]->getVar("eeLoc")<<std::endl;
+						int pose_ind = env_sub_container.label_ind_map[state_sequence[i+1]->getVar("eeLoc")];
 						plan_query_srv_msg.request.manipulator_pose.pose.position.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.x;
 						plan_query_srv_msg.request.manipulator_pose.pose.position.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.y;
-						plan_query_srv_msg.request.manipulator_pose.pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z;
+						plan_query_srv_msg.request.manipulator_pose.pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z + .3;
 						plan_query_srv_msg.request.manipulator_pose.pose.orientation.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.x;
 						plan_query_srv_msg.request.manipulator_pose.pose.orientation.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.y;
 						plan_query_srv_msg.request.manipulator_pose.pose.orientation.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.z;
@@ -662,6 +787,7 @@ int main(int argc, char **argv){
 						// Look up the post state for the action (ind i+1)
 						// to find which dimension has variable "ee"
 						bool found = state_sequence[i+1]->argFindGroup("ee", "object locations", arg_dim_label);
+						std::cout<< " PICKING UP: "<<arg_dim_label<<std::endl;
 						if (found) {
 							plan_query_srv_msg.request.pickup_object = arg_dim_label;
 						} else {

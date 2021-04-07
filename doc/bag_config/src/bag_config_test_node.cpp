@@ -45,18 +45,18 @@ int main(int argc, char **argv) {
 		bag_configs.domain_labels.resize(2);
 
 		bag_configs.domain_labels[0] = "pickup location domain";
-		bag_configs.pose_array.poses[0].position.x = .4;
-		bag_configs.pose_array.poses[0].position.y = .4;
-		bag_configs.pose_array.poses[0].position.z = 0;
+		bag_configs.pose_array.poses[0].position.x = .6;
+		bag_configs.pose_array.poses[0].position.y = .6;
+		bag_configs.pose_array.poses[0].position.z = .1;
 		bag_configs.pose_array.poses[0].orientation.x = 0;
 		bag_configs.pose_array.poses[0].orientation.y = 0;
 		bag_configs.pose_array.poses[0].orientation.z = 0;
 		bag_configs.pose_array.poses[0].orientation.w = 1;
 
 		bag_configs.domain_labels[1] = "pickup location domain";
-		bag_configs.pose_array.poses[1].position.x = -.4;
-		bag_configs.pose_array.poses[1].position.y = .4;
-		bag_configs.pose_array.poses[1].position.z = 0;
+		bag_configs.pose_array.poses[1].position.x = -.6;
+		bag_configs.pose_array.poses[1].position.y = .6;
+		bag_configs.pose_array.poses[1].position.z = .1;
 		bag_configs.pose_array.poses[1].orientation.x = 0;
 		bag_configs.pose_array.poses[1].orientation.y = 0;
 		bag_configs.pose_array.poses[1].orientation.z = 0;
