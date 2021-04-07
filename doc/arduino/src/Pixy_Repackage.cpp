@@ -16,7 +16,7 @@
 int count_max = 3;
 int count = 0;
 short int Arr[4];
-short int Data[1000][4];
+
 river_ros::data_pt point;
 river_ros::data_pkt packet;
 river_ros::data_pkg package;
@@ -33,9 +33,6 @@ int main(int argc, char **argv)
 	ros::Subscriber sub3 = n.subscribe("Pixy_Data", 100, arrayCallback);
 
 	ros::Publisher chat_pub = n.advertise<river_ros::data_pkg>("Data_Wrap", 1000);
-
-//	ros::spin();
-
 
 	while (ros::ok()) {
 
@@ -66,23 +63,23 @@ int main(int argc, char **argv)
 	}
 	}
 		return 0;
-	
+
 }
 void arrayCallback(const std_msgs::Int16MultiArray::ConstPtr& array)
 
 {
-	int k = 0;
+
 	int i = 0;
 	int count = 0;
-	int count_max = 3;
+
 	// print all the remaining numbers
 	for(std::vector<short int>::const_iterator it = array->data.begin(); it != array->data.end(); ++it)
 	{
 		Arr[i] = *it;
-		Data[k][i] = Arr[i];
+
 		i++;
 	}
-	k++;
+
 
 	return;
 }
