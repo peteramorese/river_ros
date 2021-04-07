@@ -201,6 +201,30 @@ std::vector<std::pair<double[3], int>> BAG::get_bag_pair(bool def)
 
 	// CHANGE THE BAG DEFINITION FOR THE REAL THING YOU DUMB BITCH
 	bag_def.resize(6);
+
+	string param_str = "/bag_config_node/bag_def/num_markers";
+	double num_mark = 6;
+	if(CheckParam(param_str, 1, num_mark))
+	{
+		ros::param::get(param_str, num_mark);
+	}
+
+	for(int i = 0; i < num_mark; i++)
+	{
+		param_str = "/bag_config_node/bag_def/marker_";
+		param_str = param_str + to_string(i);
+		vector<double> pos_vec;
+
+		if(CheckParam(param_str, 2) && CheckParamSize(param_str, 3))
+		{
+			ros::param::get(param_str, pos_vec);
+			bag_def[i].first[0] = pos_vec[0];
+			bag_def[i].first[0] = pos_vec[1];
+			bag_def[i].first[0] = pos_vec[2];
+			bag_def[i].second = i;
+		}
+	}
+
 	// bag_def[0].first[0] = 0;
 	// bag_def[0].first[1] = 0;
 	// bag_def[0].first[2] = 0.5*height;
@@ -225,34 +249,6 @@ std::vector<std::pair<double[3], int>> BAG::get_bag_pair(bool def)
 	// bag_def[5].first[1] = -0.5*height;
 	// bag_def[5].first[2] = 0;
 	// bag_def[5].second = 5;
-
-	double height = 0.1952625;
-	double length = 0.28575;
-	double width = 0.1952625;
-	bag_def[0].first[0] = 0;
-	bag_def[0].first[1] = 0;
-	bag_def[0].first[2] = 0.5*height;
-	bag_def[0].second = 0;
-	bag_def[1].first[0] = 0;
-	bag_def[1].first[1] = 0;
-	bag_def[1].first[2] = -0.5*height;
-	bag_def[1].second = 1;
-	bag_def[2].first[0] = 0.5*width;
-	bag_def[2].first[1] = 0;
-	bag_def[2].first[2] = 0;
-	bag_def[2].second = 2;
-	bag_def[3].first[0] = -0.5*width;
-	bag_def[3].first[1] = 0;
-	bag_def[3].first[2] = 0;
-	bag_def[3].second = 3;
-	bag_def[4].first[0] = 0;
-	bag_def[4].first[1] = 0.5*height;
-	bag_def[4].first[2] = 0;
-	bag_def[4].second = 4;
-	bag_def[5].first[0] = 0;
-	bag_def[5].first[1] = -0.5*height;
-	bag_def[5].first[2] = 0;
-	bag_def[5].second = 5;
 
 	vector<int> mark;
 
