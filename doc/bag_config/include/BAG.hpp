@@ -22,6 +22,7 @@ public:
 	double width = 0.23; // [m] Cargo bag width
 	double height = 0.24; // [m] Cargo bag height
 	std::vector<MARKER> markers;
+	mat DCM;
 
 	BAG();
 	BAG(int nm);
@@ -33,6 +34,7 @@ public:
 private:
 	std::vector<std::pair<double[3], int>> get_bag_pair(bool def);
 	std::vector<std::pair<double[3], int>> get_coords_3D();
+	std::array<double, 4> dcm_to_quat(mat);
 };
 
 #endif /* BAG_H */

@@ -24,16 +24,9 @@ stringstream warn_str;
 string sw_mode;
 bool sim;
 param_str = "/bag_config_node/software_mode";
-if(ros::param::has(param_str))
-{
-	ros::param::get(param_str, sw_mode);
-}
-else
-{
-	sw_mode = "Flight";
-	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << sw_mode << ".";
-	WARNING(warn_str.str());
-}
+sw_mode = "Flight";
+CheckParam(param_str, 1, sw_mode);
+ros::param::get(param_str, sw_mode);
 
 if(sw_mode == "Simulation")
 {
@@ -47,48 +40,34 @@ else
 // Plot Calibration Results
 bool plot_c;
 param_str = "/bag_config_node/plot/calibration";
-if(ros::param::has(param_str))
+plot_c = false;
+if(CheckParam(param_str, 1, plot_c))
 {
 	ros::param::get(param_str, plot_c);
-}
-else
-{
-	plot_c = false;
-	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << plot_c << ".";
-	WARNING(warn_str.str());
 }
 
 // Plot Estimation Results
 bool plot_e;
 param_str = "/bag_config_node/plot/estimation";
-if(ros::param::has(param_str))
+plot_e = false;
+if(CheckParam(param_str, 1, plot_e))
 {
 	ros::param::get(param_str, plot_e);
-}
-else
-{
-	plot_e = false;
-	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << plot_e << ".";
-	WARNING(warn_str.str());
 }
 
 vector<bool> plot = {plot_c, plot_e}; // Set the plot flags
 
 // Initialize the System
-SYSTEM system(sim, plot);
+SYSTEM sys(sim, plot);
 
+// Calibration Markers
 int cal_num_mark;
 bool run_cal_p;
 param_str = "/bag_config_node/run_calibration/pickup";
-if(ros::param::has(param_str))
+run_cal_p = false;
+if(CheckParam(param_str, 1, run_cal_p))
 {
 	ros::param::get(param_str, run_cal_p);
-}
-else
-{
-	run_cal_p = false;
-	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << run_cal_p << ".";
-	WARNING(warn_str.str());
 }
 
 if(run_cal_p)
@@ -97,16 +76,11 @@ if(run_cal_p)
 	cin.get();
 
 	param_str = "/bag_config_node/calibrator/pickup/num_markers";
-	if(ros::param::has(param_str))
+	if(CheckParam(param_str, 2))
 	{
 		ros::param::get(param_str, cal_num_mark);
 	}
-	else
-	{
-		warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
-		ERROR(warn_str.str());
-	}
-
+	
 	BAG calibrator_pickup(cal_num_mark);
 
 	string param_str;
@@ -116,45 +90,28 @@ if(run_cal_p)
 	{
 		param_str = "/bag_config_node/calibrator/pickup/marker_";
 		param_str = param_str + to_string(i);
-		if(ros::param::has(param_str))
+		if(CheckParam(param_str, 2) && CheckParamSize(param_str, sys.cnst.n))
 		{
 			ros::param::get(param_str, m_i_pos);
-		}
-		else
-		{
-			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
-			ERROR(warn_str.str());
-		}
-		if(m_i_pos.size() == 3)
-		{
 			calibrator_pickup.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
-		}
-		else
-		{
-			warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
-			ERROR(warn_str.str());
 		}
 	}
 
-	system.assign_bag(calibrator_pickup);
+	sys.assign_bag(calibrator_pickup);
 
 }
 
-system.calibrate_pickup();
+// Call calibrate_pickup() so that sensors_min get assigned.
+// Check is done in the function on whether to calibrate
+sys.calibrate_pickup();
 
 bool run_cal_d;
 param_str = "/bag_config_node/run_calibration/dropoff";
-if(ros::param::has(param_str))
+run_cal_d = false;
+if(CheckParam(param_str, 1, run_cal_d))
 {
 	ros::param::get(param_str, run_cal_d);
 }
-else
-{
-	run_cal_d = false;
-	warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << plot_e << ".";
-	WARNING(warn_str.str());
-}
-
 
 if(run_cal_d)
 {
@@ -162,14 +119,9 @@ if(run_cal_d)
 	cin.get();
 
 	param_str = "/bag_config_node/calibrator/dropoff/num_markers";
-	if(ros::param::has(param_str))
+	if(CheckParam(param_str, 2))
 	{
 		ros::param::get(param_str, cal_num_mark);
-	}
-	else
-	{
-		warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
-		ERROR(warn_str.str());
 	}
 
 	BAG calibrator_dropoff(cal_num_mark);
@@ -181,37 +133,50 @@ if(run_cal_d)
 	{
 		param_str = "/bag_config_node/calibrator/dropoff/marker_";
 		param_str = param_str + to_string(i);
-		if(ros::param::has(param_str))
+		if(CheckParam(param_str, 2) && CheckParamSize(param_str, sys.cnst.n))
 		{
 			ros::param::get(param_str, m_i_pos);
-		}
-		else
-		{
-			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
-			ERROR(warn_str.str());
-		}
-		if(m_i_pos.size() == 3)
-		{
 			calibrator_dropoff.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
-		}
-		else
-		{
-			warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
-			ERROR(warn_str.str());
 		}
 	}
 
-	system.assign_bag(calibrator_dropoff);
+	sys.assign_bag(calibrator_dropoff);
 
 }
 
-system.calibrate_dropoff();
+// int set_mark = 4;
+// ros::param::set("/bag_config_node/calibrator/pickup/num_markers", set_mark);
+// string cmd_str = "rosparam dump ~/catkin_ws/src/river_ros/config/test.yaml";
+// const char *command = cmd_str.c_str();
+// system(command);
 
-BAG bag;
+// Call calibrate_dropoff() so that sensors_min get assigned.
+// Check is done in the function on whether to calibrate
+sys.calibrate_dropoff();
 
-for(int i = 0; i < bag.markers.size(); i++)
+cout << "Press enter to continue to estimation." << endl;
+cin.get();
+
+while(ros::ok())
 {
-	cout << "Marker " << bag.markers[i].mid << " Position = " << bag.markers[i].position[0] << "  " << bag.markers[i].position[1] << "  " << bag.markers[i].position[2] << endl;
+	BAG bag;
+	sys.assign_bag(bag);
+
+	cout << "Estimating pickup location." << endl;
+	sys.run_estimator_pickup();
+	cout << "Done estimating pickup location." << endl;
+
+	cout << "Send message here." << endl;
+
+	cout << "Estimating dropoff location." << endl;
+	sys.run_estimator_dropoff();
+	cout << "Done estimating dropoff location." << endl;
+
 }
+
+// for(int i = 0; i < bag.markers.size(); i++)
+// {
+// 	cout << "Marker " << bag.markers[i].mid << " Position = " << bag.markers[i].position[0] << "  " << bag.markers[i].position[1] << "  " << bag.markers[i].position[2] << endl;
+// }
 
 } // End main()

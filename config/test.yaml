@@ -1,11 +1,11 @@
 bag_config_node:
   bag_def:
+    marker_0: [1.1, 2.2, 3.3]
     marker_1: [1.1, 2.2, 3.3]
     marker_2: [1.1, 2.2, 3.3]
     marker_3: [1.1, 2.2, 3.3]
     marker_4: [1.1, 2.2, 3.3]
     marker_5: [1.1, 2.2, 3.3]
-    marker_6: [1.1, 2.2, 3.3]
     num_markers: 6
   calibrator:
     dropoff:
@@ -17,15 +17,17 @@ bag_config_node:
       marker_5: [0.75, 0.89, 0.92]
       num_markers: 3
     pickup:
-      marker_0: [1.0, 0.75, -0.9]
-      marker_1: [-1.0, 0.75, -0.9]
-      marker_2: [0.75, 0.89, 0.92]
+      marker_0: [0, 0.1, 0.1]
+      marker_1: [0.05, -0.05, 0.1]
+      marker_2: [0.1, -0.05, 0]
       marker_3: [0.75, 0.89, 0.92]
       marker_4: [0.75, 0.89, 0.92]
       marker_5: [0.75, 0.89, 0.92]
-      num_markers: 3
-  plot: {calibration: false, estimation: false}
-  run_calibration: {dropoff: true, pickup: true}
+      num_markers: 4
+  multiple_bags: false
+  plot: {calibration: true, estimation: false}
+  run_calibration: {dropoff: false, pickup: false}
+  run_estimation: false
   sensor_0:
     point: [0, 0, -0.508]
     position: [0.4142, 0.8, 0.4052]
@@ -58,13 +60,16 @@ bag_config_node:
     position: [2.272, -1.0353, 0.5978]
   software_mode: Flight
   thresholds: {covariance: 0.01, time: 30}
+  update_params: false
 rosdistro: 'melodic
 
   '
 roslaunch:
-  uris: {host_jabell_thinkpad__36833: 'http://jabell-ThinkPad:36833/', host_jabell_thinkpad__38591: 'http://jabell-ThinkPad:38591/',
-    host_jabell_thinkpad__46403: 'http://jabell-ThinkPad:46403/'}
+  uris: {host_jabell_thinkpad__33735: 'http://jabell-ThinkPad:33735/', host_jabell_thinkpad__34989: 'http://jabell-ThinkPad:34989/',
+    host_jabell_thinkpad__37171: 'http://jabell-ThinkPad:37171/', host_jabell_thinkpad__38567: 'http://jabell-ThinkPad:38567/',
+    host_jabell_thinkpad__44747: 'http://jabell-ThinkPad:44747/', host_jabell_thinkpad__44763: 'http://jabell-ThinkPad:44763/',
+    host_jabell_thinkpad__45119: 'http://jabell-ThinkPad:45119/', host_jabell_thinkpad__46839: 'http://jabell-ThinkPad:46839/'}
 rosversion: '1.14.10
 
   '
-run_id: ac4b26e6-95aa-11eb-9b5a-f85971783868
+run_id: fc58af92-9739-11eb-8da1-f85971783868

@@ -21,32 +21,22 @@ SYSTEM::SYSTEM(bool s, vector<bool> p)
 	double cov_thrsh;
 	double time_thrsh;
 	string param_str;
-	stringstream warn_str;
+	string warn_str;
 
 	param_str = "/bag_config_node/thresholds/covariance";
-	if(ros::param::has(param_str))
+	cov_thrsh = 0.05;
+	if(CheckParam(param_str, 1, cov_thrsh))
 	{
 		ros::param::get(param_str, cov_thrsh);
 	}
-	else
-	{
-		cov_thrsh = 0.05;
-		warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << cov_thrsh << ".";
-		WARNING(warn_str.str());
-	}
 
 	param_str = "/bag_config_node/thresholds/time";
-	if(ros::param::has(param_str))
+	time_thrsh = 60;
+	if(CheckParam(param_str, 1, time_thrsh))
 	{
 		ros::param::get(param_str, time_thrsh);
 	}
-	else
-	{
-		time_thrsh = 60;
-		warn_str << "WARNING: The rosparam " << param_str << " does not exist. Defaulting " << param_str << " to " << time_thrsh << " [s].";
-		WARNING(warn_str.str());
-	}
-
+		
 	stop_est_cov_thrsh = cov_thrsh;
 	stop_est_time = time_thrsh;
 
@@ -212,22 +202,22 @@ void SYSTEM::calibrate(std::vector<int> s)
 
 			printf("\33[2KT\r");
 
-			cout << "Sensor " << s[i] << ":\t";
+			cout << "Sensor " << s[i] << " 2sigma:";
 
 			for(int j = 0; j < cnst.n; j++)
 			{
 				printf("\r");
 				if(j == 0)
 				{
-					cout << "\t\t\t";
+					cout << "\t\t\tx = ";
 				}
 				else if(j == 1)
 				{
-					cout << "\t\t\t\t\t\t";
+					cout << "\t\t\t\t\t\ty = ";
 				}
 				else if(j == 2)
 				{
-					cout << "\t\t\t\t\t\t\t\t\t";
+					cout << "\t\t\t\t\t\t\t\t\tz = ";
 				}
 				
 				cout << 2.0*sqrt(e.P(j, j));
@@ -272,6 +262,31 @@ void SYSTEM::calibrate(std::vector<int> s)
 
 		// sensors[s[i]].calibrate_sensor(Y[i], cal, core, cnst); // Calibrate Sensor SID
 
+		// Update ros params
+		bool upd_sens = false;
+		string param_str = "/bag_config_node/sensor_";
+		param_str = param_str + to_string(s[i]) + "/position";
+		if(CheckParam(param_str, 1, upd_sens))
+		{
+			ros::param::get(param_str, upd_sens);
+		}
+
+		if(upd_sens)
+		{
+			vector<double> sens_upd;
+			EKF e = sensors[s[i]].ekf.back();
+			if(e.x_hat.size() == 3)
+			{
+				sens_upd = {e.x_hat[0], e.x_hat[1], e.x_hat[2]};
+				ros::param::set(param_str, sens_upd);
+			}
+			else
+			{
+				string warn_str = "Update for rosparam " + param_str + " has failed.";
+				WARNING(warn_str);
+			}
+		}
+
 		if(plot[0] == true) // If the plot flag is set to true
 		{
 			sensors[s[i]].plot_ekf(); // Plot the EKF results
@@ -289,6 +304,7 @@ void SYSTEM::calibrate_pickup()
 	// Selects the correct sensors to calibrate (Sensors 0 - 4)
 	// 
 
+	string param_str;
 	std::vector<int> s;
 
 	for(int i = 0; i < 5; i++)
@@ -297,7 +313,13 @@ void SYSTEM::calibrate_pickup()
 	}
 
 	bool run_cal_p;
-	ros::param::get("/bag_config_node/run_calibration/pickup", run_cal_p);
+	run_cal_p = false;
+
+	param_str = "/bag_config_node/run_calibration/pickup";
+	if(CheckParam(param_str, 1, run_cal_p))
+	{
+		ros::param::get(param_str, run_cal_p);
+	}
 
 	if(run_cal_p)
 	{
@@ -313,6 +335,7 @@ void SYSTEM::calibrate_dropoff()
 	// Selects the correct sensors to calibrate (Sensors 5 - 9)
 	// 
 
+	string param_str;
 	std::vector<int> s;
 
 	for(int i = 0; i < 5; i++)
@@ -321,7 +344,12 @@ void SYSTEM::calibrate_dropoff()
 	}
 
 	bool run_cal_d;
-	ros::param::get("/bag_config_node/run_calibration/dropoff", run_cal_d);
+	run_cal_d = false;
+	param_str = "/bag_config_node/run_calibration/dropoff";
+	if(CheckParam(param_str, 1, run_cal_d))
+	{
+		ros::param::get(param_str, run_cal_d);
+	}
 
 	if(run_cal_d)
 	{
@@ -354,7 +382,7 @@ void SYSTEM::set_sensors_min(vector<int> s)
 
 		sensors_min.push_back(s_min);
 
-		cout << "S" << s[i] << "  " << sensors_min[s[i]].position[0] << "  " << sensors_min[s[i]].position[1] << "  " << sensors_min[s[i]].position[2] << endl;
+		// cout << "S" << s[i] << "  " << sensors_min[s[i]].position[0] << "  " << sensors_min[s[i]].position[1] << "  " << sensors_min[s[i]].position[2] << endl;
 	}
 }
 

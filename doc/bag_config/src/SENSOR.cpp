@@ -58,52 +58,26 @@ void SENSOR::init_default_sensor(int id, CORE c)
 	string param_str;
 	string param_substr = "/bag_config_node/sensor_";
 	param_substr = param_substr + to_string(sid) + "/";
-	stringstream warn_str;
+	string warn_str;
 
 	vector<double> pos_vec;
 	vector<double> pnt_vec;
 
 	// Sensor Position
 	param_str = param_substr + "position";
-	if(ros::param::has(param_str))
-	{
-		ros::param::get(param_str, pos_vec);
-	}
-	else
-	{
-		warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
-		ERROR(warn_str.str());
-	}
-	if(pos_vec.size() == 3)
-	{
-		position = {pos_vec[0], pos_vec[1], pos_vec[2]};
-	}
-	else
-	{
-		warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
-		ERROR(warn_str.str());
-	}
+	CheckParam(param_str, 2);
+	CheckParamSize(param_str, 3);
+	ros::param::get(param_str, pos_vec);
+	
+	position = {pos_vec[0], pos_vec[1], pos_vec[2]};
 
 	// Sensor Pointing
 	param_str = param_substr + "point";
-	if(ros::param::has(param_str))
-	{
-		ros::param::get(param_str, pnt_vec);
-	}
-	else
-	{
-		warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
-		ERROR(warn_str.str());
-	}
-	if(pnt_vec.size() == 3)
-	{
-		point = {pnt_vec[0], pnt_vec[1], pnt_vec[2]};
-	}
-	else
-	{
-		warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
-		ERROR(warn_str.str());
-	}
+	CheckParam(param_str, 2);
+	CheckParamSize(param_str, 3);
+	ros::param::get(param_str, pnt_vec);
+	
+	point = {pnt_vec[0], pnt_vec[1], pnt_vec[2]};
 
 	frame = get_sensor_frame(position, point, c); // Compute the sensor's pointing frame
 

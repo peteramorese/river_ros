@@ -8,7 +8,7 @@ using namespace arma;
 BAG::BAG()
 {
 	string param_str;
-	stringstream warn_str;
+	string warn_str;
 	vector<double> pos_vec;
 
 	// ros::VP_string remappings;
@@ -27,23 +27,11 @@ BAG::BAG()
 		}
 
 		param_str = param_str + to_string(marker.mid);
-		if(ros::param::has(param_str))
+		if(CheckParam(param_str, 2) && CheckParamSize(param_str, 3))
 		{
 			ros::param::get(param_str, pos_vec);
-		}
-		else
-		{
-			warn_str << "ERROR: The rosparam " << param_str << " does not exist.";
-			ERROR(warn_str.str());
-		}
-		if(pos_vec.size() == 3)
-		{
+			
 			marker.position = {pos_vec[0], pos_vec[1], pos_vec[2]};
-		}
-		else
-		{
-			warn_str << "ERROR: The rosparam " << param_str << " is the incorrect size.";
-			ERROR(warn_str.str());
 		}
 
 		markers.push_back(marker);
@@ -130,6 +118,8 @@ void BAG::estimate_ori()
 		{matout(1, 0), matout(1, 1), matout(1, 2)}, 
 		{matout(2, 0), matout(2, 1), matout(2, 2)}};
 
+	DCM = Q;
+
 	std::vector<std::pair<double[3], int>> bag_def = get_bag_pair(true);
 
 	// Compute the rotated (and centered) positions of each marker
@@ -160,6 +150,9 @@ void BAG::estimate_ori()
 		markers[Index].position[1] - bag_def[Index].first[1],
 		markers[Index].position[2] - bag_def[Index].first[2]};
 
+	center = move;
+
+	cout << "Center: " << move[0] << "\t\t" << move[1] << "\t\t" << move[2] << endl;
 	for(int i = 0; i < bag_def.size(); i++)
 	{
 		if(markers[i].updated == false)
@@ -171,6 +164,16 @@ void BAG::estimate_ori()
 
 		cout << "M" << i << "  " << markers[i].position[0] << "  " << markers[i].position[1] << "  " << markers[i].position[2] << endl;
 	}
+
+	std::array<double, 4> quat = dcm_to_quat(Q);
+}
+
+
+std::array<double, 4> BAG::dcm_to_quat(mat Q)
+{
+	std::array<double, 4> quat;
+	quat = {1, 1, 1, 1};
+	return quat;
 }
 
 

@@ -24,6 +24,8 @@
 #include <vector>
 #include <chrono>
 #include <armadillo>
+#include <stdlib.h>
+#include <cstdlib>
 
 using namespace std;
 using namespace arma;
@@ -33,6 +35,7 @@ namespace plt = matplotlibcpp;
 class SYSTEM
 {
 public:
+	CONSTANTS cnst; // Object defining system-wide constants
 	bool sim; // Flag defining simulation run mode
 	vector<bool> plot; // Flag to plot results {calibration, estimation}
 
@@ -53,7 +56,6 @@ public:
 
 private:
 	CORE core; // Object defining the core frame
-	CONSTANTS cnst; // Object defining system-wide constants
 	vector<SENSOR> sensors; // Vector defining the network of sensors
 	vector<SENSOR_MIN> sensors_min; // Vector defining the network of sensors (minimal)
 	BAG bag; // Object defining the cargo bag being estimated
