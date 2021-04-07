@@ -43,6 +43,7 @@ public:
 	~SYSTEM();
 	void set_sim_flag(bool);
 	void assign_bag(BAG);
+	BAG get_bag();
 	void calibrate_pickup();
 	void calibrate_dropoff();
 	void run_estimator(std::vector<int>);

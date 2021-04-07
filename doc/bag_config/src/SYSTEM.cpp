@@ -110,6 +110,13 @@ void SYSTEM::assign_bag(BAG b)
 	set_sim_flag(sim); // Propagate the sim flag
 }
 
+
+BAG SYSTEM::get_bag()
+{
+	return bag;
+}
+
+
 void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 {
 	// cout << "\n\nNEW MESSAGE" << endl;
@@ -190,37 +197,53 @@ void SYSTEM::calibrate(std::vector<int> s)
 
 	EKF e;
 
+	string param_str = "/bag_config_node/verbose";
+	bool verbose = true;
+	if(CheckParam(param_str, 1, verbose))
+	{
+		ros::param::get(param_str, verbose);
+	}
+
 	while(loop)
 	{
 		loop = false;
 
-		printf("\033[A\033[A\033[A\033[A\033[A");
+		if(verbose)
+		{
+			printf("\033[A\033[A\033[A\033[A\033[A");
+		}
 
 		for(int i = 0; i < s.size(); i++)
 		{
 			e = sensors[s[i]].ekf.back();
 
-			printf("\33[2KT\r");
+			if(verbose)
+			{
+				printf("\33[2KT\r");
 
-			cout << "Sensor " << s[i] << " 2sigma:";
+				cout << "Sensor " << s[i] << " 2sigma:";
+			}
 
 			for(int j = 0; j < cnst.n; j++)
 			{
-				printf("\r");
-				if(j == 0)
+				if(verbose)
 				{
-					cout << "\t\t\tx = ";
+					printf("\r");
+					if(j == 0)
+					{
+						cout << "\t\t\tx = ";
+					}
+					else if(j == 1)
+					{
+						cout << "\t\t\t\t\t\ty = ";
+					}
+					else if(j == 2)
+					{
+						cout << "\t\t\t\t\t\t\t\t\tz = ";
+					}
+					
+					cout << 2.0*sqrt(e.P(j, j));
 				}
-				else if(j == 1)
-				{
-					cout << "\t\t\t\t\t\ty = ";
-				}
-				else if(j == 2)
-				{
-					cout << "\t\t\t\t\t\t\t\t\tz = ";
-				}
-				
-				cout << 2.0*sqrt(e.P(j, j));
 
 				if(2.0*sqrt(e.P(j, j)) > stop_est_cov_thrsh)
 				{
@@ -572,7 +595,16 @@ void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
 
 			if(Y_k.size() > 1)
 			{
-				cout << "Estimating Marker " << cur_mid << endl;
+				string param_str = "/bag_config_node/verbose";
+				bool verbose = true;
+				if(CheckParam(param_str, 1, verbose))
+				{
+					ros::param::get(param_str, verbose);
+				}
+				if(verbose)
+				{
+					cout << "Estimating Marker " << cur_mid << endl;
+				}
 				Y.push_back(Y_k);
 				bag.markers[cur_mid].estimate_pos(Y, sensors_min, core, cnst);
 
@@ -681,7 +713,25 @@ void SYSTEM::run_estimator(std::vector<int> s)
 
 	cout << "Running Orientation Estimator..." << endl;
 
-	bag.estimate_ori();
+	int upd_markers = 0;
+
+	for(int i = 0; i < bag.markers.size(); i++)
+	{
+		if(bag.markers[i].updated == true)
+		{
+			upd_markers++;
+		}
+	}
+
+	if(upd_markers > 2)
+	{
+		bag.bag_found = true;
+		bag.estimate_ori();
+	}
+	else if(upd_markers < 3)
+	{
+		cout << "Bag has not been found. Only " << upd_markers << " markers have been updated." << endl;
+	}
 
 	cout << "DONE" << endl;
 }

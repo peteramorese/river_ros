@@ -7,8 +7,9 @@ run_calibration:
   dropoff: False
 run_estimation: True
 multiple_bags: False
+verbose: True
 plot:
-  calibration: True
+  calibration: False
   estimation: False
 thresholds:
   covariance: 0.01

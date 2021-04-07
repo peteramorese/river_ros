@@ -57,6 +57,13 @@ if(CheckParam(param_str, 1, plot_e))
 
 vector<bool> plot = {plot_c, plot_e}; // Set the plot flags
 
+param_str = "/bag_config_node/verbose";
+bool verbose = true;
+if(CheckParam(param_str, 1, verbose))
+{
+	ros::param::get(param_str, verbose);
+}
+
 // Initialize the System
 SYSTEM sys(sim, plot);
 
@@ -154,25 +161,46 @@ if(run_cal_d)
 // Check is done in the function on whether to calibrate
 sys.calibrate_dropoff();
 
-cout << "Press enter to continue to estimation." << endl;
+cout << "Press enter to continue to estimation. " << ros::ok() << "  " << ros::master::check() << endl;
 cin.get();
 
-while(ros::ok())
-{
-	BAG bag;
-	sys.assign_bag(bag);
+// while(true)
+// {
+	BAG bag_p;
+	cout << "Center: " << bag_p.center[0] << "  " << bag_p.center[1] << "  " << bag_p.center[2] << endl;
+	sys.assign_bag(bag_p);
 
-	cout << "Estimating pickup location." << endl;
+
+	if(verbose)
+	{
+		cout << "Estimating pickup location." << endl;
+	}
 	sys.run_estimator_pickup();
-	cout << "Done estimating pickup location." << endl;
+	bag_p = sys.get_bag();
+	if(verbose)
+	{
+		cout << "Center: " << bag_p.center[0] << "  " << bag_p.center[1] << "  " << bag_p.center[2] << endl;
+		cout << "Done estimating pickup location." << endl;
+	}
 
 	cout << "Send message here." << endl;
 
-	cout << "Estimating dropoff location." << endl;
-	sys.run_estimator_dropoff();
-	cout << "Done estimating dropoff location." << endl;
+	BAG bag_d;
+	cout << "Center: " << bag_d.center[0] << "  " << bag_d.center[1] << "  " << bag_d.center[2] << endl;
+	sys.assign_bag(bag_d);
 
-}
+	if(verbose)
+	{
+		cout << "Estimating dropoff location." << endl;
+	}
+	sys.run_estimator_dropoff();
+	bag_d = sys.get_bag();
+	if(verbose)
+	{
+		cout << "Center: " << bag_d.center[0] << "  " << bag_d.center[1] << "  " << bag_d.center[2] << endl;
+		cout << "Done estimating dropoff location." << endl;
+	}
+// }
 
 // for(int i = 0; i < bag.markers.size(); i++)
 // {

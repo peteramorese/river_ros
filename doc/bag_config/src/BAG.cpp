@@ -36,6 +36,9 @@ BAG::BAG()
 
 		markers.push_back(marker);
 	}
+
+	pos_vec = {0, 0, 0};
+	center = pos_vec;
 };
 
 BAG::BAG(int nm)
@@ -152,7 +155,18 @@ void BAG::estimate_ori()
 
 	center = move;
 
-	cout << "Center: " << move[0] << "\t\t" << move[1] << "\t\t" << move[2] << endl;
+	string param_str = "/bag_config_node/verbose";
+	bool verbose = true;
+	if(CheckParam(param_str, 1, verbose))
+	{
+		ros::param::get(param_str, verbose);
+	}
+
+	if(verbose)
+	{
+		cout << "Center: " << move[0] << "\t\t" << move[1] << "\t\t" << move[2] << endl;
+	}
+
 	for(int i = 0; i < bag_def.size(); i++)
 	{
 		if(markers[i].updated == false)
@@ -162,7 +176,10 @@ void BAG::estimate_ori()
 			markers[i].position = curr + move;
 		}
 
-		cout << "M" << i << "  " << markers[i].position[0] << "  " << markers[i].position[1] << "  " << markers[i].position[2] << endl;
+		if(verbose)
+		{
+			cout << "M" << i << "  " << markers[i].position[0] << "  " << markers[i].position[1] << "  " << markers[i].position[2] << endl;
+		}
 	}
 
 	std::array<double, 4> quat = dcm_to_quat(Q);
