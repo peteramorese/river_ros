@@ -92,10 +92,11 @@ int main(int argc, char **argv) {
 			if (temp_action_label == "observe") {
 				obs_srv_msg.request.time_sent = ros::Time::now();
 				if (obs_ex_client.call(obs_srv_msg)) {
-					temp_action_label = obs_srv_msg.response.observation_label;		
+					temp_observation_label = obs_srv_msg.response.observation_label;		
+					std::cout<<temp_observation_label<<std::endl;
 				} else {
-					return 1;
 					ROS_ERROR_NAMED("status_node","Failed to call service: observe");
+					return 1;
 				}
 							
 				/*
@@ -183,9 +184,10 @@ int main(int argc, char **argv) {
 			curr_node = currptr->nodeind;
 		} else {
 			bool observation_found = false;
-			//ros::Rate r(1);
+			ros::Rate r(1);
 			while (ros::ok() && currptr != nullptr) {
-				//r.sleep();
+				r.sleep();
+				std::cout<<"saw: "<<currptr->label<<" comparing to:"<<temp_observation_label<<std::endl;
 				if (currptr->label == temp_observation_label) {
 					curr_node = currptr->nodeind;
 					observation_found = true;
