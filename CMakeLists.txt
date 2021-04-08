@@ -68,6 +68,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 add_message_files(
   DIRECTORY msg
   FILES
+  PlanningQueryStatus_msg.msg
   BagConfigPoseArray_msg.msg
   data_pt.msg
   data_pkt.msg
@@ -80,6 +81,7 @@ add_service_files(
   FILES
   PlanExecute_srv.srv
   Observe_srv.srv
+  PlanningQuery_srv.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -186,7 +188,7 @@ include_directories(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-#add_subdirectory(doc/manipulator)
+add_subdirectory(doc/manipulator)
 add_subdirectory(doc/arduino)
 add_subdirectory(doc/bag_config)
 add_subdirectory(doc/task_planner)
@@ -194,6 +196,7 @@ add_subdirectory(doc/status)
 
 
 #add_dependencies(eef_srv_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(manipulator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(task_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(bag_config_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(bag_config_talker ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
