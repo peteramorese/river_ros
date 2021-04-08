@@ -59,8 +59,8 @@ int main(int argc, char **argv) {
 		bag_configs.pose_array.poses[1].position.z = .1;
 		bag_configs.pose_array.poses[1].orientation.x = 0;
 		bag_configs.pose_array.poses[1].orientation.y = 0;
-		bag_configs.pose_array.poses[1].orientation.z = 0;
-		bag_configs.pose_array.poses[1].orientation.w = 1;
+		bag_configs.pose_array.poses[1].orientation.z = 1;
+		bag_configs.pose_array.poses[1].orientation.w = 0;
 
 
 		// keep this 

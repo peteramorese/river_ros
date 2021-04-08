@@ -1,4 +1,4 @@
-geometry_msgs/PoseStamped manipulator_pose
+geometry_msgs/Pose manipulator_pose
 geometry_msgs/PoseArray bag_poses
 bool setup_environment
 string[] bag_labels

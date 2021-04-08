@@ -22,6 +22,7 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 
+
 class PlanningQuerySrv {
 	private:
 		moveit::planning_interface::MoveGroupInterface* move_group_ptr;
@@ -29,8 +30,11 @@ class PlanningQuerySrv {
 	public:
 		PlanningQuerySrv(moveit::planning_interface::MoveGroupInterface* move_group_ptr_, moveit::planning_interface::PlanningSceneInterface* psi_ptr_) : 
 			move_group_ptr(move_group_ptr_),
-       			planning_scene_interface_ptr(psi_ptr_)	{
-		}
+			planning_scene_interface_ptr(psi_ptr_)	{
+			}
+		const double bag_l = .4127;
+		const double bag_w = .2286;
+		const double bag_h = .2413;
 		bool planQuery_serviceCB(river_ros::PlanningQuery_srv::Request &request, river_ros::PlanningQuery_srv::Response &response) {
 			std::cout<<"\n";
 			std::cout<<"HELLO"<<std::endl;
@@ -47,9 +51,9 @@ class PlanningQuerySrv {
 					col_obj_vec[i].primitives.resize(1);
 					col_obj_vec[i].primitives[0].type = col_obj_vec[i].primitives[0].BOX;
 					col_obj_vec[i].primitives[0].dimensions.resize(3);
-					col_obj_vec[i].primitives[0].dimensions[0] = .4127;
-					col_obj_vec[i].primitives[0].dimensions[1] = .2286;
-					col_obj_vec[i].primitives[0].dimensions[2] = .2413;
+					col_obj_vec[i].primitives[0].dimensions[0] = bag_l;
+					col_obj_vec[i].primitives[0].dimensions[1] = bag_w;
+					col_obj_vec[i].primitives[0].dimensions[2] = bag_h;
 
 					col_obj_vec[i].primitive_poses.resize(1);
 					std::cout<<" i see : "<<request.bag_poses.poses[i].position.x<<std::endl;
@@ -89,20 +93,20 @@ class PlanningQuerySrv {
 				move_group_ptr->setStartStateToCurrentState();
 
 				// Convert from PoseStamed to Pose
-				pose.position.x = request.manipulator_pose.pose.position.x;
-				pose.position.y = request.manipulator_pose.pose.position.y;
-				pose.position.z = request.manipulator_pose.pose.position.z;
-				pose.orientation.x = request.manipulator_pose.pose.orientation.x;
-				pose.orientation.y = request.manipulator_pose.pose.orientation.y;
-				pose.orientation.z = request.manipulator_pose.pose.orientation.z;
-				pose.orientation.w = request.manipulator_pose.pose.orientation.w;
+				pose.position.x = request.manipulator_pose.position.x;
+				pose.position.y = request.manipulator_pose.position.y;
+				pose.position.z = request.manipulator_pose.position.z + .1 + bag_h/2;
+				pose.orientation.x = 0;//-request.manipulator_pose.orientation.x;
+				pose.orientation.y = 0;//-request.manipulator_pose.orientation.y;
+				pose.orientation.z = 0;//-request.manipulator_pose.orientation.z;
+				pose.orientation.w = 1;//request.manipulator_pose.orientation.w;
 				move_group_ptr->setPoseTarget(pose);
 				move_group_ptr->setPlanningTime(5.0);
 
 				ROS_INFO_NAMED("manipulator_node", "Reference frame: %s", move_group_ptr->getPlanningFrame().c_str());
-				std::cout<<"moving to x: "<< request.manipulator_pose.pose.position.x<<std::endl;
-				std::cout<<"moving to y: "<< request.manipulator_pose.pose.position.y<<std::endl;
-				std::cout<<"moving to z: "<< request.manipulator_pose.pose.position.z<<std::endl;
+				std::cout<<"moving to x: "<< request.manipulator_pose.position.x<<std::endl;
+				std::cout<<"moving to y: "<< request.manipulator_pose.position.y<<std::endl;
+				std::cout<<"moving to z: "<< request.manipulator_pose.position.z<<std::endl;
 				bool success = false;
 				for (int ii=0; ii<4; ii++){
 					std::cout<<"before plan"<<std::endl;
@@ -121,13 +125,13 @@ class PlanningQuerySrv {
 			}
 			return true;
 		}
-	
+
 };
 
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "manipulator_node");
 	ros::NodeHandle M_NH("~");
-	
+
 	ros::AsyncSpinner spinner(2);
 	spinner.start();
 
@@ -195,12 +199,12 @@ int main(int argc, char **argv) {
 	//int Nobj=1;
 	std::vector<moveit_msgs::CollisionObject> colObjVec;
 	colObjVec.resize(Nobj);
-	
+
 	/*
-	for (int i=0; i<Nobj; i++) {
-		colObjVec[i].header.frame_id = "base_link";
-	}
-	*/
+	   for (int i=0; i<Nobj; i++) {
+	   colObjVec[i].header.frame_id = "base_link";
+	   }
+	   */
 
 	colObjVec[0].header.frame_id = "base_link";
 	colObjVec[1].header.frame_id = "ee_link";
@@ -218,7 +222,7 @@ int main(int argc, char **argv) {
 	colObjVec[0].primitive_poses.resize(1);
 	colObjVec[0].primitive_poses[0].position.x = 0;
 	colObjVec[0].primitive_poses[0].position.y = 0;
-	colObjVec[0].primitive_poses[0].position.z = -.6; // should be -.5
+	colObjVec[0].primitive_poses[0].position.z = -1; // should be -.5
 	colObjVec[0].primitive_poses[0].orientation.x = 0;
 	colObjVec[0].primitive_poses[0].orientation.y = 0;
 	colObjVec[0].primitive_poses[0].orientation.z = 0;

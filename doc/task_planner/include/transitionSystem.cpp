@@ -447,7 +447,7 @@ void ProductSystem<T>::getPlan(std::vector<T*>& state_sequence, std::vector<std:
 		action_sequence.resize(stored_plan.size()-1);
 		auto prod_heads = graph_product->getHeads();
 		int i;
-		for (i=0; i<stored_plan.size(); ++i) {
+		for (i=0; i<stored_plan.size()-1; ++i) {
 			auto currptr = prod_heads[stored_plan[i]]->adjptr;	
 			T* curr_state = prod_state_map[stored_plan[i]];
 			state_sequence[i] = curr_state;
@@ -459,7 +459,7 @@ void ProductSystem<T>::getPlan(std::vector<T*>& state_sequence, std::vector<std:
 				currptr = currptr->adjptr;
 			}
 		}
-		state_sequence[state_sequence.size()] = prod_state_map[stored_plan[state_sequence.size()]];
+		state_sequence[state_sequence.size()-1] = prod_state_map[stored_plan[state_sequence.size()-1]];
 	} else {
 		std::cout<<"Error: Plan was not found, cannot return plan\n";
 	}

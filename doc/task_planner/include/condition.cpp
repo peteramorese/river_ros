@@ -183,17 +183,23 @@ bool Condition::subEvaluate(const State* state, const sub_condition& cond) {
 						{
 							std::vector<std::string> group_dim_labels;
 							state->getGroupDimLabels(cond.arg_1, group_dim_labels);
+							sub_eval = true;
 							for (int ii=0; ii<group_dim_labels.size(); ++ii) {
+								bool sub_sub_eval = false;
 								dom_var = state->getVar(group_dim_labels[ii]);
 								found = state->getDomains(dom_var, in_domains);
 								if (found) {
 									for (int ii=0; ii<in_domains.size(); ii++) {
 										if (in_domains[ii] == cond.arg_2) {
-											sub_eval = true;	
+											sub_sub_eval = true;	
 											break;
 										}
 									}
 								}		
+								if (!sub_sub_eval) {
+									sub_eval = false;
+									break;
+								}
 							}
 						}
 						break;

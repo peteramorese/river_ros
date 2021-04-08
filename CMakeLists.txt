@@ -68,7 +68,6 @@ find_package(Boost REQUIRED COMPONENTS system)
 add_message_files(
   DIRECTORY msg
   FILES
-  PlanningQuery_msg.msg
   PlanningQueryStatus_msg.msg
   BagConfigPoseArray_msg.msg
   data_pt.msg
