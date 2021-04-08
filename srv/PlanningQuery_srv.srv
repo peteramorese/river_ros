@@ -4,5 +4,6 @@ bool setup_environment
 string[] bag_labels
 string pickup_object
 string drop_object
+bool safe_config
 ---
 bool success

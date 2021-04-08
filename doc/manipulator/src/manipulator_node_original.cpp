@@ -4,6 +4,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "river_ros/PlanningQuery_srv.h"
 #include <vector>
+#include <cmath>
 
 #include <pluginlib/class_loader.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
@@ -28,13 +29,15 @@ class PlanningQuerySrv {
 		moveit::planning_interface::MoveGroupInterface* move_group_ptr;
 		moveit::planning_interface::PlanningSceneInterface* planning_scene_interface_ptr;
 	public:
-		PlanningQuerySrv(moveit::planning_interface::MoveGroupInterface* move_group_ptr_, moveit::planning_interface::PlanningSceneInterface* psi_ptr_) : 
+		PlanningQuerySrv(moveit::planning_interface::MoveGroupInterface* move_group_ptr_, moveit::planning_interface::PlanningSceneInterface* psi_ptr_, int N_TRIALS_) : 
 			move_group_ptr(move_group_ptr_),
-			planning_scene_interface_ptr(psi_ptr_)	{
+			planning_scene_interface_ptr(psi_ptr_),
+			N_TRIALS(N_TRIALS_) {
 			}
 		const double bag_l = .4127;
 		const double bag_w = .2286;
 		const double bag_h = .2413;
+		const int N_TRIALS;
 		bool planQuery_serviceCB(river_ros::PlanningQuery_srv::Request &request, river_ros::PlanningQuery_srv::Response &response) {
 			std::cout<<"\n";
 			std::cout<<"HELLO"<<std::endl;
@@ -93,22 +96,28 @@ class PlanningQuerySrv {
 				move_group_ptr->setStartStateToCurrentState();
 
 				// Convert from PoseStamed to Pose
-				pose.position.x = request.manipulator_pose.position.x;
-				pose.position.y = request.manipulator_pose.position.y;
-				pose.position.z = request.manipulator_pose.position.z + .1 + bag_h/2;
-				pose.orientation.x = 0;//-request.manipulator_pose.orientation.x;
-				pose.orientation.y = 0;//-request.manipulator_pose.orientation.y;
-				pose.orientation.z = 0;//-request.manipulator_pose.orientation.z;
-				pose.orientation.w = 1;//request.manipulator_pose.orientation.w;
-				move_group_ptr->setPoseTarget(pose);
-				move_group_ptr->setPlanningTime(5.0);
+				if (request.safe_config) {
+					std::vector<double> joint_val_target = {0.0,-2.094,1.763,-1.222,-1.641,0.0};
+					move_group_ptr->setJointValueTarget(joint_val_target);
+				} else {
+					pose.position.x = request.manipulator_pose.position.x;
+					pose.position.y = request.manipulator_pose.position.y;
+					pose.position.z = request.manipulator_pose.position.z + .1 + bag_h/2;
+					double theta = M_PI/2;
+					pose.orientation.x = std::sin(theta/2)*0;//-request.manipulator_pose.orientation.x;
+					pose.orientation.y = std::sin(theta/2)*1;//-request.manipulator_pose.orientation.y;
+					pose.orientation.z = std::sin(theta/2)*0;//-request.manipulator_pose.orientation.z;
+					pose.orientation.w = std::cos(theta/2);//request.manipulator_pose.orientation.w;
+					move_group_ptr->setPoseTarget(pose);
+				}
+				move_group_ptr->setPlanningTime(6.0);
 
 				ROS_INFO_NAMED("manipulator_node", "Reference frame: %s", move_group_ptr->getPlanningFrame().c_str());
 				std::cout<<"moving to x: "<< request.manipulator_pose.position.x<<std::endl;
 				std::cout<<"moving to y: "<< request.manipulator_pose.position.y<<std::endl;
 				std::cout<<"moving to z: "<< request.manipulator_pose.position.z<<std::endl;
 				bool success = false;
-				for (int ii=0; ii<4; ii++){
+				for (int ii=0; ii<N_TRIALS; ii++){
 					std::cout<<"before plan"<<std::endl;
 					//move_group_ptr->plan(plan);
 					std::cout<<"before execute"<<std::endl;
@@ -222,7 +231,7 @@ int main(int argc, char **argv) {
 	colObjVec[0].primitive_poses.resize(1);
 	colObjVec[0].primitive_poses[0].position.x = 0;
 	colObjVec[0].primitive_poses[0].position.y = 0;
-	colObjVec[0].primitive_poses[0].position.z = -1; // should be -.5
+	colObjVec[0].primitive_poses[0].position.z = -.55; // should be -.5
 	colObjVec[0].primitive_poses[0].orientation.x = 0;
 	colObjVec[0].primitive_poses[0].orientation.y = 0;
 	colObjVec[0].primitive_poses[0].orientation.z = 0;
@@ -253,7 +262,7 @@ int main(int argc, char **argv) {
 	move_group.attachObject("eef","ee_link");
 	move_group.setEndEffectorLink("ee_link");
 
-	PlanningQuerySrv plan_query_srv_container(&move_group, &planning_scene_interface);
+	PlanningQuerySrv plan_query_srv_container(&move_group, &planning_scene_interface, 5);
 
 	ros::ServiceServer plan_query_service = M_NH.advertiseService("task_planner/planning_query", &PlanningQuerySrv::planQuery_serviceCB, &plan_query_srv_container);
 
