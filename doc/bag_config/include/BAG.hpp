@@ -23,6 +23,7 @@ public:
 	double height = 0.24; // [m] Cargo bag height
 	std::vector<MARKER> markers;
 	mat DCM;
+	std::array<double, 4> quat;
 	bool bag_found = false;
 
 	BAG();

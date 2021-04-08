@@ -327,6 +327,8 @@ void SYSTEM::calibrate_pickup()
 	// Selects the correct sensors to calibrate (Sensors 0 - 4)
 	// 
 
+	int cal_num_mark;
+
 	string param_str;
 	std::vector<int> s;
 
@@ -346,6 +348,32 @@ void SYSTEM::calibrate_pickup()
 
 	if(run_cal_p)
 	{
+		cout << "Press Enter to calibrate." << endl;
+		cin.get();
+
+		param_str = "/bag_config_node/calibrator/pickup/num_markers";
+		if(CheckParam(param_str, 2))
+		{
+			ros::param::get(param_str, cal_num_mark);
+		}
+		
+		BAG calibrator_pickup(cal_num_mark);
+
+		vector<double> m_i_pos;
+
+		for(int i = 0; i < cal_num_mark; i++)
+		{
+			param_str = "/bag_config_node/calibrator/pickup/marker_";
+			param_str = param_str + to_string(i);
+			if(CheckParam(param_str, 2) && CheckParamSize(param_str, cnst.n))
+			{
+				ros::param::get(param_str, m_i_pos);
+				calibrator_pickup.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
+			}
+		}
+
+		assign_bag(calibrator_pickup);
+
 		calibrate(s);
 	}
 
@@ -357,6 +385,8 @@ void SYSTEM::calibrate_dropoff()
 {
 	// Selects the correct sensors to calibrate (Sensors 5 - 9)
 	// 
+
+	int cal_num_mark;
 
 	string param_str;
 	std::vector<int> s;
@@ -376,6 +406,32 @@ void SYSTEM::calibrate_dropoff()
 
 	if(run_cal_d)
 	{
+		cout << "Press Enter to calibrate." << endl;
+		cin.get();
+
+		param_str = "/bag_config_node/calibrator/dropoff/num_markers";
+		if(CheckParam(param_str, 2))
+		{
+			ros::param::get(param_str, cal_num_mark);
+		}
+
+		BAG calibrator_dropoff(cal_num_mark);
+
+		vector<double> m_i_pos;
+
+		for(int i = 0; i < cal_num_mark; i++)
+		{
+			param_str = "/bag_config_node/calibrator/dropoff/marker_";
+			param_str = param_str + to_string(i);
+			if(CheckParam(param_str, 2) && CheckParamSize(param_str, cnst.n))
+			{
+				ros::param::get(param_str, m_i_pos);
+				calibrator_dropoff.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
+			}
+		}
+
+		assign_bag(calibrator_dropoff);
+
 		calibrate(s);
 	}
 
@@ -742,14 +798,60 @@ void SYSTEM::run_estimator_pickup()
 {
 	// Function to run the estimation algorithm at the pickup location
 
-	std::vector<int> s;
+	string param_str;
 
-	for(int i = 0; i < 5; i++)
+	param_str = "/bag_config_node/verbose";
+	bool verbose = true;
+	if(CheckParam(param_str, 1, verbose))
 	{
-		s.push_back(i);
+		ros::param::get(param_str, verbose);
 	}
 
-	run_estimator(s);
+	param_str = "/bag_config_node/run_estimation";
+	bool run_est = true;
+	if(CheckParam(param_str, 1, run_est))
+	{
+		ros::param::get(param_str, run_est);
+	}
+
+	if(run_est)
+	{
+		if(verbose)
+		{
+			cout << "Estimating pickup location." << endl;
+		}
+
+		string domain = "pickup";
+		BAG bag_p;
+		assign_bag(bag_p);
+
+		bool mult_bags = false; // Assume there is a single bag in the core
+		param_str = "/bag_config_node/multiple_bags";
+		if(CheckParam(param_str, 1, mult_bags))
+		{
+			ros::param::get(param_str, mult_bags);
+		}
+
+		std::vector<int> s;
+
+		for(int i = 0; i < 5; i++)
+		{
+			s.push_back(i);
+		}
+
+		run_estimator(s);
+
+		if(!mult_bags)
+		{
+			send_bag_config_msg(domain);
+		}
+
+		if(verbose)
+		{
+			cout << "Center: " << bag.center[0] << "  " << bag.center[1] << "  " << bag.center[2] << endl;
+			cout << "Done estimating pickup location." << endl;
+		}
+	}
 }
 
 
@@ -759,12 +861,91 @@ void SYSTEM::run_estimator_dropoff()
 
 	std::vector<int> s;
 
-	for(int i = 5; i < 10; i++)
+	string param_str;
+
+	param_str = "/bag_config_node/verbose";
+	bool verbose = true;
+	if(CheckParam(param_str, 1, verbose))
 	{
-		s.push_back(i);
+		ros::param::get(param_str, verbose);
 	}
 
-	run_estimator(s);
+	param_str = "/bag_config_node/run_estimation";
+	bool run_est = true;
+	if(CheckParam(param_str, 1, run_est))
+	{
+		ros::param::get(param_str, run_est);
+	}
+
+	if(run_est)
+	{
+		if(verbose)
+		{
+			cout << "Estimating dropoff location." << endl;
+		}
+
+		string domain = "dropoff";
+		BAG bag_d;
+		assign_bag(bag_d);
+
+		std::vector<int> s;
+
+		for(int i = 5; i < 10; i++)
+		{
+			s.push_back(i);
+		}
+
+		run_estimator(s);
+
+		send_bag_config_msg(domain);
+
+		if(verbose)
+		{
+			cout << "Center: " << bag.center[0] << "  " << bag.center[1] << "  " << bag.center[2] << endl;
+			cout << "Done estimating dropoff location." << endl;
+		}
+	}
+}
+
+
+void SYSTEM::send_bag_config_msg(string domain)
+{
+	ros::NodeHandle bag_config;
+	river_ros::BagConfigPoseArray_msg bag_config_msg;
+	ros::Publisher BagConfigPub = bag_config.advertise<river_ros::BagConfigPoseArray_msg>("test", 1000);
+
+	// bag_config_msg.pose_array.header.stamp = ros::Time::now();
+
+	if(bag.bag_found) // Bag was located
+	{
+		// bag_config_msg.bags_found = true;
+
+		if(domain == "pickup")
+		{
+			// bag_config_msg.domain_labels = "pickup location domain";
+		}
+		else if(domain == "dropoff")
+		{
+			// bag_config_msg.domain_labels = "dropoff location domain";
+		}
+
+		// bag_config_msg.observation_label = "observed";
+		// bag_config_msg.pose_array.poses.position.x = bag.center[0];
+		// bag_config_msg.pose_array.poses.position.y = bag.center[1];
+		// bag_config_msg.pose_array.poses.position.z = bag.center[2];
+		// bag_config_msg.pose_array.poses.orientation.x = bag.quat[0];
+		// bag_config_msg.pose_array.poses.orientation.y = bag.quat[1];
+		// bag_config_msg.pose_array.poses.orientation.z = bag.quat[2];
+		// bag_config_msg.pose_array.poses.orientation.w = bag.quat[3];
+	}
+	else // Bag was not located
+	{
+		// bag_config_msg.bags_found = false;
+		// bag_config_msg.observation_label = "not observed";
+	}
+
+	// BagConfigPub.publish(bag_config_msg);
+	
 }
 
 

@@ -17,6 +17,7 @@
 #include "river_ros/data_pt.h"
 #include "river_ros/data_pkt.h"
 #include "river_ros/data_pkg.h"
+#include "river_ros/BagConfigPoseArray_msg.h"
 
 #include <iostream>
 #include <string>
@@ -52,6 +53,7 @@ public:
 	vector<vector<vector<DATA>>> get_data(std::vector<int>, string, int);
 	void calibrate_callback(const river_ros::data_pkg::ConstPtr&);
 	void estimator_callback(const river_ros::data_pkg::ConstPtr&);
+	void send_bag_config_msg(string);
 	// void clear_data();
 
 
