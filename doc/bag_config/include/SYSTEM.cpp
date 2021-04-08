@@ -989,7 +989,7 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 	// {
 	// 	res.observation_label = "cargo_not_found";
 	// }
-
+		return true;
 }
 
 
@@ -1009,7 +1009,7 @@ void SYSTEM::loop_estimator()
 		while(ros::ok())
 		{
 			cout << "Advertising service!" << endl;
-			
+
 			send_bag_config_msg();
 
 			ros::spinOnce();
