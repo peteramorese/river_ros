@@ -4,7 +4,6 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "river_ros/PlanExecute_srv.h"
-#include "river_ros/PlanningQuery_msg.h"
 #include "river_ros/PlanningQuery_srv.h"
 #include "river_ros/PlanningQueryStatus_msg.h"
 #include "river_ros/BagConfigPoseArray_msg.h"
