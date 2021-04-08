@@ -54,7 +54,7 @@ ros::init(argc, argv, "estimator");
 
 
 // Initialize the System
-SYSTEM sys(sim, plot);
+SYSTEM sys(sim);
 
 // Run pickup sensors calibration
 sys.calibrate_pickup();
@@ -62,29 +62,10 @@ sys.calibrate_pickup();
 // Run dropoff sensor calibration
 sys.calibrate_dropoff();
 
+// Update system parameters
+// sys.update_params();
 
-// int set_mark = 4;
-// ros::param::set("/bag_config_node/calibrator/pickup/num_markers", set_mark);
-// string cmd_str = "rosparam dump ~/catkin_ws/src/river_ros/config/test.yaml";
-// const char *command = cmd_str.c_str();
-// system(command);
-
-cout << "ros::ok() = " << ros::ok() << endl;
-
-// while(ros::ok())
-// {
-
-	// Run the estimator on the pickup location
-	sys.run_estimator_pickup();
-
-	// Run the estimator on the dropoff location
-	sys.run_estimator_dropoff();
-	
-// }
-
-// for(int i = 0; i < bag.markers.size(); i++)
-// {
-// 	cout << "Marker " << bag.markers[i].mid << " Position = " << bag.markers[i].position[0] << "  " << bag.markers[i].position[1] << "  " << bag.markers[i].position[2] << endl;
-// }
+// Continuously loop the estimator
+// sys.loop_estimator();
 
 } // End main()

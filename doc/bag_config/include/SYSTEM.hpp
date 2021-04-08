@@ -38,9 +38,8 @@ class SYSTEM
 public:
 	CONSTANTS cnst; // Object defining system-wide constants
 	bool sim; // Flag defining simulation run mode
-	vector<bool> plot; // Flag to plot results {calibration, estimation}
 
-	SYSTEM(bool s, vector<bool> p = {false, false});
+	SYSTEM(bool s);
 	~SYSTEM();
 	void set_sim_flag(bool);
 	void assign_bag(BAG);
@@ -54,6 +53,8 @@ public:
 	void calibrate_callback(const river_ros::data_pkg::ConstPtr&);
 	void estimator_callback(const river_ros::data_pkg::ConstPtr&);
 	void send_bag_config_msg(string);
+	void update_params();
+	void loop_estimator();
 	// void clear_data();
 
 

@@ -5,14 +5,13 @@ using namespace arma;
 using namespace std;
 
 
-SYSTEM::SYSTEM(bool s, vector<bool> p)
+SYSTEM::SYSTEM(bool s)
 {
 	// Initializes the SYSTEM object
 
 	cout << "Initializing System...\t\t" << endl;
 
 	sim = s; // Set the software run mode
-	plot = p; // Set the plotting flag
 
 	init_default_sensors(); // Initialize the default sensor network
 
@@ -185,10 +184,6 @@ void SYSTEM::calibrate(std::vector<int> s)
 	std::chrono::duration<double> delta_time;
 	bool time_stop = false;
 
-	// ros::VP_string remappings;
-	// remappings.push_back(std::make_pair("chatter", "chatter"));
-	// ros::init(remappings, "calibrator");
-
 	ros::NodeHandle cal_nh;
 
 	ros::Subscriber cal_sub = cal_nh.subscribe("chatter", 1000, &SYSTEM::calibrate_callback, this);
@@ -286,15 +281,15 @@ void SYSTEM::calibrate(std::vector<int> s)
 		// sensors[s[i]].calibrate_sensor(Y[i], cal, core, cnst); // Calibrate Sensor SID
 
 		// Update ros params
-		bool upd_sens = false;
-		string param_str = "/bag_config_node/sensor_";
-		param_str = param_str + to_string(s[i]) + "/position";
-		if(CheckParam(param_str, 1, upd_sens))
+		bool upd_params;
+		param_str = "/bag_config_node/update_params";
+		upd_params = false;
+		if(CheckParam(param_str, 1, upd_params))
 		{
-			ros::param::get(param_str, upd_sens);
+			ros::param::get(param_str, upd_params);
 		}
 
-		if(upd_sens)
+		if(upd_params)
 		{
 			vector<double> sens_upd;
 			EKF e = sensors[s[i]].ekf.back();
@@ -305,20 +300,30 @@ void SYSTEM::calibrate(std::vector<int> s)
 			}
 			else
 			{
-				string warn_str = "Update for rosparam " + param_str + " has failed.";
+				string warn_str = "Update to rosparam " + param_str + " has failed.";
 				WARNING(warn_str);
 			}
-		}
-
-		if(plot[0] == true) // If the plot flag is set to true
-		{
-			sensors[s[i]].plot_ekf(); // Plot the EKF results
-			// sensors[i].plot_e_y();
 		}
 
 		// cout << "DONE" << endl;
 	}
 
+	// Plot Calibration Results
+	bool plot_c;
+	param_str = "/bag_config_node/plot/calibration";
+	plot_c = false;
+	if(CheckParam(param_str, 1, plot_c))
+	{
+		ros::param::get(param_str, plot_c);
+	}
+
+	if(plot_c) // If the plot flag is set to true
+	{
+		for(int i = 0; i < s.size(); i++)
+		{
+			sensors[s[i]].plot_ekf(); // Plot the EKF results
+		}
+	}
 }
 
 
@@ -768,6 +773,26 @@ void SYSTEM::run_estimator(std::vector<int> s)
 		cout << "Done" << endl;
 	}
 
+	// Plot the estimator restults
+	bool plot_e;
+	string param_str = "/bag_config_node/plot/estimation";
+	plot_e = false;
+	if(CheckParam(param_str, 1, plot_e))
+	{
+		ros::param::get(param_str, plot_e);
+	}
+
+	if(plot_e)
+	{
+		for(int i = 0; i < bag.markers.size(); i++)
+		{
+			if(bag.markers[i].updated)
+			{
+				bag.markers[i].plot_ekf();
+			}
+		}
+	}
+
 	cout << "Running Orientation Estimator..." << endl;
 
 	int upd_markers = 0;
@@ -908,44 +933,97 @@ void SYSTEM::run_estimator_dropoff()
 }
 
 
+void SYSTEM::loop_estimator()
+{
+	string param_str = "/bag_config_node/run_estimation";
+	bool run_est = true;
+	if(CheckParam(param_str, 1, run_est))
+	{
+		ros::param::get(param_str, run_est);
+	}
+
+	if(run_est)
+	{
+		while(ros::ok())
+		{
+			run_estimator_pickup();
+
+			run_estimator_dropoff();
+		}
+	}
+}
+
+
 void SYSTEM::send_bag_config_msg(string domain)
 {
 	ros::NodeHandle bag_config;
 	river_ros::BagConfigPoseArray_msg bag_config_msg;
-	ros::Publisher BagConfigPub = bag_config.advertise<river_ros::BagConfigPoseArray_msg>("test", 1000);
+	ros::Publisher BagConfigPub = bag_config.advertise<river_ros::BagConfigPoseArray_msg>("bag_config/bag_configs", 10);
 
-	// bag_config_msg.pose_array.header.stamp = ros::Time::now();
+	bag_config_msg.pose_array.poses.resize(1);
+	bag_config_msg.domain_labels.resize(1);
+	bag_config_msg.pose_array.header.stamp = ros::Time::now();
 
 	if(bag.bag_found) // Bag was located
 	{
-		// bag_config_msg.bags_found = true;
+		bag_config_msg.bags_found = true;
 
 		if(domain == "pickup")
 		{
-			// bag_config_msg.domain_labels = "pickup location domain";
+			bag_config_msg.domain_labels[0] = "pickup location domain";
 		}
 		else if(domain == "dropoff")
 		{
-			// bag_config_msg.domain_labels = "dropoff location domain";
+			bag_config_msg.domain_labels[0] = "dropoff location domain";
 		}
 
-		// bag_config_msg.observation_label = "observed";
-		// bag_config_msg.pose_array.poses.position.x = bag.center[0];
-		// bag_config_msg.pose_array.poses.position.y = bag.center[1];
-		// bag_config_msg.pose_array.poses.position.z = bag.center[2];
-		// bag_config_msg.pose_array.poses.orientation.x = bag.quat[0];
-		// bag_config_msg.pose_array.poses.orientation.y = bag.quat[1];
-		// bag_config_msg.pose_array.poses.orientation.z = bag.quat[2];
-		// bag_config_msg.pose_array.poses.orientation.w = bag.quat[3];
+		bag_config_msg.observation_label = "cargo_found";
+		bag_config_msg.pose_array.poses[0].position.x = bag.center[0];
+		bag_config_msg.pose_array.poses[0].position.y = bag.center[1];
+		bag_config_msg.pose_array.poses[0].position.z = bag.center[2];
+		bag_config_msg.pose_array.poses[0].orientation.x = bag.quat[0];
+		bag_config_msg.pose_array.poses[0].orientation.y = bag.quat[1];
+		bag_config_msg.pose_array.poses[0].orientation.z = bag.quat[2];
+		bag_config_msg.pose_array.poses[0].orientation.w = bag.quat[3];
 	}
 	else // Bag was not located
 	{
-		// bag_config_msg.bags_found = false;
-		// bag_config_msg.observation_label = "not observed";
+		bag_config_msg.bags_found = false;
+		bag_config_msg.observation_label = "cargo_not_found";
 	}
 
-	// BagConfigPub.publish(bag_config_msg);
-	
+	BagConfigPub.publish(bag_config_msg);
+	ros::spinOnce();
+
+	cout << "Published Bag Config Message." << endl;
+}
+
+
+void SYSTEM::update_params()
+{
+	bool upd_params;
+	string param_str = "/bag_config_node/update_params";
+	upd_params = false;
+	if(CheckParam(param_str, 1, upd_params))
+	{
+		ros::param::get(param_str, upd_params);
+	}
+
+	if(upd_params)
+	{
+		string param_path;
+		string param_str = "/bag_config_node/pack_file_path";
+		if(CheckParam(param_str, 1))
+		{
+			ros::param::get(param_str, param_path);
+		
+			stringstream cmd_strm;
+			cmd_strm << "rosparam dump " << param_path << "river_ros/config/params.yaml /bag_config_node";
+			string cmd_str = cmd_strm.str();
+			const char *command = cmd_str.c_str();
+			system(command);
+		}
+	}
 }
 
 
