@@ -1008,8 +1008,6 @@ void SYSTEM::loop_estimator()
 
 		while(ros::ok())
 		{
-			cout << "Advertising service!" << endl;
-
 			send_bag_config_msg();
 
 			ros::spinOnce();
@@ -1065,8 +1063,6 @@ void SYSTEM::send_bag_config_msg()
 
 	BagConfigPub.publish(bag_config_msg);
 	ros::spinOnce();
-
-	cout << "Published Bag Config Message." << endl;
 }
 
 
