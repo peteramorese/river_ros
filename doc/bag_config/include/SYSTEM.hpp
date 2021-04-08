@@ -18,6 +18,8 @@
 #include "river_ros/data_pkt.h"
 #include "river_ros/data_pkg.h"
 #include "river_ros/BagConfigPoseArray_msg.h"
+#include "river_ros/Observe_srv.h"
+#include "geometry_msgs/Pose.h"
 
 #include <iostream>
 #include <string>
@@ -52,7 +54,6 @@ public:
 	vector<vector<vector<DATA>>> get_data(std::vector<int>, string, int);
 	void calibrate_callback(const river_ros::data_pkg::ConstPtr&);
 	void estimator_callback(const river_ros::data_pkg::ConstPtr&);
-	void send_bag_config_msg(string);
 	void update_params();
 	void loop_estimator();
 	// void clear_data();
@@ -67,11 +68,16 @@ private:
 	double stop_est_cov_thrsh; // Threshold to stop estimation
 	double stop_est_time; // [s] Threshold to stop estimation
 	ros::NodeHandle est_nh;
+	river_ros::BagConfigPoseArray_msg bag_config_msg;
 	// vector<vector<vector<DATA>>> Y; // Vector to store data in
 
 	void init_default_sensors();
 	void calibrate(std::vector<int> s);
 	vector<vector<DATA>> read_data(string);
 	void set_sensors_min(vector<int>);
+	bool observe_srv_callback(river_ros::Observe_srv::Request &req, river_ros::Observe_srv::Response &res);
+	void reset_bag_config_msg();
+	void upd_bag_config_msg(string);
+	void send_bag_config_msg();
 	vector<vector<vector<DATA>>> reorg_data(vector<vector<vector<DATA>>>);
 };
