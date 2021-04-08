@@ -5,23 +5,23 @@ update_params: False
 run_calibration: 
   pickup: True
   dropoff: False
-run_estimation: True
+run_estimation: False
 multiple_bags: False
 verbose: True
 plot:
-  calibration: False
+  calibration: True
   estimation: False
 thresholds:
-  covariance: 0.01
-  time: 5
+  covariance: 0.001
+  time: 20
 calibrator:
   pickup:
-    num_markers: 3
-    marker_0: [0, 0.1, 0.1] # [m]
-    marker_1: [0.05, -0.05, 0.1] # [m]
-    marker_2: [0.1, -0.05, 0] # [m]
-    marker_3: [0.75, 0.89, 0.92] # [m]
-    marker_4: [0.75, 0.89, 0.92] # [m]
+    num_markers: 5
+    marker_0: [0, 0, -0.4318] # [m]
+    marker_1: [-0.1246, 0.3143, -0.4318] # [m]
+    marker_2: [0.0735, 0.3366, -0.4318] # [m]
+    marker_3: [0.0708, -0.2588, -0.4318] # [m]
+    marker_4: [-0.1139, -0.2604, -0.4318] # [m]
     marker_5: [0.75, 0.89, 0.92] # [m]
   dropoff:
     num_markers: 3
@@ -41,19 +41,19 @@ bag_def:
   marker_5: [1.1, 2.2, 3.3] # [m]
 sensor_0:
   position: [0.4142, 0.8, 0.4052] # [m]
-  point: [0, 0, -0.508] # [m]
+  point: [0, 0, -0.4318] # [m]
 sensor_1:
   position: [0.4142, -1.1214, 0.4052] # [m]
-  point: [0, 0, -0.508] # [m]
+  point: [0, 0, -0.4318] # [m]
 sensor_2:
   position: [0.75, 0.7242, 0.9479] # [m]
-  point: [0, 0, -0.508] # [m]
+  point: [0, 0, -0.4318] # [m]
 sensor_3:
   position: [0.75, -0.7242, 1.25] # [m]
-  point: [0, 0, -0.508] # [m]
+  point: [0, 0, -0.4318] # [m]
 sensor_4:
   position: [1.0, 0, 1.1934] # [m]
-  point: [0, 0, -0.508] # [m]
+  point: [0, 0, -0.4318] # [m]
 sensor_5:
   position: [1.772, 1.0353, 0.5978] # [m]
   point: [2.2720, 0.8453, -0.8453] # [m]

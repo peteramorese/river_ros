@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
 	ros::Subscriber sub3 = n.subscribe("Pixy_Data", 100, arrayCallback);
 
-	ros::Publisher chat_pub = n.advertise<river_ros::data_pkg>("Data_Wrap", 1000);
+	ros::Publisher chat_pub = n.advertise<river_ros::data_pkg>("chatter", 1000);
 
 	while (ros::ok()) {
 
