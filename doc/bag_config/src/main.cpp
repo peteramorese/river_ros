@@ -63,9 +63,9 @@ sys.calibrate_pickup();
 sys.calibrate_dropoff();
 
 // Update system parameters
-// sys.update_params();
+sys.update_params();
 
 // Continuously loop the estimator
-// sys.loop_estimator();
+sys.loop_estimator();
 
 } // End main()

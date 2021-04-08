@@ -27,7 +27,7 @@ multiple_bags: false
 pack_file_path: ~/catkin_ws/src/
 plot: {calibration: true, estimation: false}
 run_calibration: {dropoff: false, pickup: true}
-run_estimation: false
+run_estimation: true
 sensor_0:
   point: [0, 0, -0.4318]
   position: [0.4142, 0.8, 0.4052]

@@ -1021,7 +1021,7 @@ void SYSTEM::update_params()
 			cmd_strm << "rosparam dump " << param_path << "river_ros/config/params.yaml /bag_config_node";
 			string cmd_str = cmd_strm.str();
 			const char *command = cmd_str.c_str();
-			system(command);
+			int garbage = system(command);
 		}
 	}
 }
