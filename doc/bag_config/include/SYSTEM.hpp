@@ -66,6 +66,7 @@ private:
 	std::chrono::time_point<std::chrono::system_clock> est_start; // Time that estimation begins
 	double stop_est_cov_thrsh; // Threshold to stop estimation
 	double stop_est_time; // [s] Threshold to stop estimation
+	ros::NodeHandle est_nh;
 	// vector<vector<vector<DATA>>> Y; // Vector to store data in
 
 	void init_default_sensors();

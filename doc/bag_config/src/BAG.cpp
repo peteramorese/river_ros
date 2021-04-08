@@ -229,8 +229,8 @@ std::array<double, 4> BAG::dcm_to_quat(mat Q)
 	{
 		cout << "There was an error calculating the quaternion from the DCM:" << endl;
 		cout << "Q = \t[" << Q(0, 0) << "\t" << Q(0, 1) << "\t" << Q(0, 2) << "]" << endl;
-		cout << "\t\t[" << Q(1, 0) << "\t" << Q(1, 1) << "\t" << Q(1, 2) << "]" <<  endl;
-		cout << "\t\t[" << Q(2, 0) << "\t" << Q(2, 1) << "\t" << Q(2, 2) << "]" << endl;
+		cout << "\t[" << Q(1, 0) << "\t" << Q(1, 1) << "\t" << Q(1, 2) << "]" <<  endl;
+		cout << "\t[" << Q(2, 0) << "\t" << Q(2, 1) << "\t" << Q(2, 2) << "]" << endl;
 	}
 
 

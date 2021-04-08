@@ -184,9 +184,9 @@ void SYSTEM::calibrate(std::vector<int> s)
 	std::chrono::duration<double> delta_time;
 	bool time_stop = false;
 
-	ros::NodeHandle cal_nh;
+	// ros::NodeHandle cal_nh;
 
-	ros::Subscriber cal_sub = cal_nh.subscribe("chatter", 1000, &SYSTEM::calibrate_callback, this);
+	ros::Subscriber cal_sub = est_nh.subscribe("chatter", 1000, &SYSTEM::calibrate_callback, this);
 
 	bool loop = true;
 
@@ -662,10 +662,6 @@ void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
 				{
 					ros::param::get(param_str, verbose);
 				}
-				if(verbose)
-				{
-					cout << "Estimating Marker " << cur_mid << endl;
-				}
 
 				Y.push_back(Y_k);
 				bag.markers[cur_mid].estimate_pos(Y, sensors_min, core, cnst);
@@ -723,7 +719,7 @@ void SYSTEM::run_estimator(std::vector<int> s)
 	std::chrono::duration<double> time_elapsed;
 	bool time_stop = false;
 
-	ros::NodeHandle est_nh;
+	// ros::NodeHandle est_nh;
 
 	// Create ros subscriber
 	ros::Subscriber est_sub = est_nh.subscribe("chatter", 1000, &SYSTEM::estimator_callback, this);
