@@ -28,26 +28,6 @@ ros::init(argc, argv, "estimator");
 	{
 		sim = false;
 	}
-
-	// // Plot Calibration Results
-	// bool plot_c;
-	// param_str = "/bag_config_node/plot/calibration";
-	// plot_c = false;
-	// if(CheckParam(param_str, 1, plot_c))
-	// {
-	// 	ros::param::get(param_str, plot_c);
-	// }
-
-	// // Plot Estimation Results
-	// bool plot_e;
-	// param_str = "/bag_config_node/plot/estimation";
-	// plot_e = false;
-	// if(CheckParam(param_str, 1, plot_e))
-	// {
-	// 	ros::param::get(param_str, plot_e);
-	// }
-
-	// vector<bool> plot = {plot_c, plot_e}; // Set the plot flags
 // End get parameter values
 
 
