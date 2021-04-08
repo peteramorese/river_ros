@@ -936,6 +936,8 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 
 	res.time_received = ros::Time::now();
 
+	cout << "Advertising service!" << endl;
+
 	reset_bag_config_msg();
 
 	// if (we found all of the bags)
