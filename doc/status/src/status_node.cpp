@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 		auto currptr = heads[curr_node]->adjptr;
 		if (action) {
 			temp_action_label = currptr->label;
-			std::cout<<"temp_action_label: "<<temp_action_label<<std::endl;
+			ROS_INFO_NAMED("status_node","Current label: %s",temp_action_label.c_str());
 			if (temp_action_label == "observe") {
 				bool bags_found;
 				ObserveSub obs_sub_container(bags_found);
@@ -155,8 +155,6 @@ int main(int argc, char **argv) {
 			//ros::Rate r(1);
 			while (ros::ok() && currptr != nullptr) {
 				//r.sleep();
-				std::cout<<"searching connectivity... label: "<<currptr->label<<std::endl;
-				std::cout<<"temp_observation_label: "<<temp_observation_label<<std::endl;
 				if (currptr->label == temp_observation_label) {
 					curr_node = currptr->nodeind;
 					observation_found = true;

@@ -1,8 +1,9 @@
 #include <cstdio>
 #include <math.h>
-#include <unordered_map>
+//#include <unordered_map>
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+#include "std_srvs/SetBool.h"
 #include "river_ros/PlanExecute_srv.h"
 #include "river_ros/PlanningQuery_msg.h"
 #include "river_ros/PlanningQuery_srv.h"
@@ -31,32 +32,31 @@ class StartSrv {
 };
 
 struct EnvironmentSub {
+	private:
+		bool& begin;
+	public: 
 	int num_bags;
 	bool bags_found;
-	bool& begin;
-	bool& run;
 	
 	// This will hold the locations of the bags that are found, and will eventually hold
 	// the hard-coded drop off locations (edited manually in the code)
 	river_ros::BagConfigPoseArray_msg pose_array_copy; 
 
 	// This maps the location labels to the array index for easy lookup
-	std::unordered_map<std::string, int> label_ind_map;
+	//std::unordered_map<std::string, int> label_ind_map;
 
-	EnvironmentSub(bool& begin_, bool& run_) : begin(begin_), run(run_) {
-		run = true;
+	EnvironmentSub(bool& begin_) : begin(begin_) {
 		bags_found = false;
 	}
-
 	void envSubCB(const river_ros::BagConfigPoseArray_msg::ConstPtr& env_pose_array){
 		std::cout<<"recieved msg BagConfigPoseArray"<<std::endl;
 		bags_found = env_pose_array->bags_found;
-		if (bags_found && begin && run) {
-			run = false;
+		if (bags_found && begin) {
 			// Must copy over all data and store in local variable because msg is deallocated
 			pose_array_copy.domain_labels = env_pose_array->domain_labels;
-			pose_array_copy.pose_array.header.stamp = env_pose_array->pose_array.header.stamp;
+			//pose_array_copy.pose_array.header.stamp = env_pose_array->pose_array.header.stamp;
 			num_bags = env_pose_array->pose_array.poses.size();
+			std::cout<<" NUM_BAGS: "<<num_bags<<std::endl;
 			pose_array_copy.pose_array.poses.resize(num_bags);
 			for (int i=0; i<num_bags; ++i)  {
 				pose_array_copy.pose_array.poses[i].position.x = env_pose_array->pose_array.poses[i].position.x;
@@ -66,22 +66,20 @@ struct EnvironmentSub {
 				pose_array_copy.pose_array.poses[i].orientation.y = env_pose_array->pose_array.poses[i].orientation.y;
 				pose_array_copy.pose_array.poses[i].orientation.z = env_pose_array->pose_array.poses[i].orientation.z;
 				pose_array_copy.pose_array.poses[i].orientation.w = env_pose_array->pose_array.poses[i].orientation.w;
-				//std::cout<<" MAPPING: "<<pose_array_copy.domain_labels[i]<<" to: "<<i<<std::endl;
 				//label_ind_map[pose_array_copy.domain_labels[i]] = i;
 			}
-			//std::cout<<" ME MAP L_0 AND L_1"<<std::endl;
-			//label_ind_map["L__0"] = 0;
-			//label_ind_map["L_1"] = 1;
 		} else {
 			std::cout<<" --bags were not found or TP not initiated"<<std::endl;
 		}
 	}
+	/*
 	void mapSize(const std::string& label) {
-		std::cout<<" MAPPING: "<<label<<" to: "<<pose_array_copy.pose_array.poses.size() - 1<<std::endl;
 		label_ind_map[label] = pose_array_copy.pose_array.poses.size() - 1;
 	}
+	*/
 };
 
+/*
 class PlanningQuerySub {
 	private:
 		std::string& action;
@@ -96,6 +94,7 @@ class PlanningQuerySub {
 			success = plan_query->success;
 		}
 };
+*/
 
 class DropOffLocations {
 	private:
@@ -210,14 +209,15 @@ int main(int argc, char **argv){
 	std_msgs::String status_TP_msg;
 
 	// Subscribe to the Bag Config topic to setup environmnet and call manipulator node
-	bool run;
-	EnvironmentSub env_sub_container(begin, run);
+	EnvironmentSub env_sub_container(begin);
 	ros::Subscriber environment_TP_sub = TP_NH.subscribe("bag_config/bag_configs", 1, &EnvironmentSub::envSubCB, &env_sub_container);
 
 	// Service client to send a planning query to manipulator node
-	ros::ServiceClient plan_query_client = TP_NH.serviceClient<river_ros::PlanningQuery_srv>("manipulator_node/task_planner/planning_query");
+	//ros::ServiceClient plan_query_client = TP_NH.serviceClient<river_ros::PlanningQuery_srv>("manipulator_node/task_planner/planning_query");
 	river_ros::PlanningQuery_srv plan_query_srv_msg;
 
+	ros::ServiceClient plan_query_client = TP_NH.serviceClient<std_srvs::SetBool>("manipulator_node/task_planner/planning_query");
+	
 	// Publish the current planning query
 	/*
 	ros::Publisher plan_query_pub = TP_NH.advertise<river_ros::PlanningQuery_msg>("manipulator_node/task_planner/planning_query", 1);
@@ -235,12 +235,12 @@ int main(int argc, char **argv){
 	// std::vector<std::vector<double>> drop_off_locs = {{-.4, .4, 0}, {-.4, -.4, 0}, {-.4, .4, .5}, {-.4, -.4, .5}};
 	DropOffLocations drop_off_locs(1); // Maximum radius set in ctor
 	drop_off_locs.setOrientation(0, 0, 0, 1);
-	drop_off_locs.addLocation(-.4, .4, .15, "goalL1");
-	drop_off_locs.addLocation(-.4,-.4, .15, "goalL2");
-	drop_off_locs.addLocation(-.4, .4, .5, "goalL3");
-	drop_off_locs.addLocation(-.4,-.4, .5, "goalL4");
+	drop_off_locs.addLocation(-.4, .4, 0, "goal_L1");
+	drop_off_locs.addLocation(-.4,-.4, 0, "goal_L2");
+	drop_off_locs.addLocation(-.4, .4, .5, "goal_L3");
+	drop_off_locs.addLocation(-.4,-.4, .5, "goal_L4");
 
-
+	//std::vector<std::string> label_ind_map; // Indices are the same indices as pose_array_copy, location labels are stored
 	int hello = 0;
 	ros::Rate r(1);
 	while (ros::ok()) {
@@ -275,6 +275,10 @@ int main(int argc, char **argv){
 				// so that goal locations can be added to match the number of objects
 				int N_obj_elsewhere = 0; 
 				int a; // Iterates thru all objects
+				/*
+				label_ind_map.clear();
+				label_ind_map.resize(env_sub_container.num_bags);
+				*/
 				for (a=0; a<env_sub_container.pose_array_copy.pose_array.poses.size(); ++a) {
 					std::string domain_label = env_sub_container.pose_array_copy.domain_labels[a];
 					if (domain_label == "pickup location domain") {
@@ -290,8 +294,8 @@ int main(int argc, char **argv){
 						domain_loc_p.push_back(label);
 						var_labels_1.push_back(label);
 						var_labels_2.push_back(label);
-						std::cout<<" MAPPING: "<< label <<" to: "<<a<<std::endl;
-						env_sub_container.label_ind_map[label] = a;
+						//label_ind_map[a] = label;
+						 //std::cout<<" MAPPING: "<<label<<" TO: "<<a<<std::endl;
 						N_obj_elsewhere++;
 					} else if (domain_label == "dropoff location domain") {
 						bool found;
@@ -303,14 +307,15 @@ int main(int argc, char **argv){
 							geometry_msgs::Pose temp_pose;
 							drop_off_locs.getLocation(label, temp_pose);
 							env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
-							env_sub_container.pose_array_copy.domain_labels.push_back(label);
-							env_sub_container.mapSize(label);
+							//env_sub_container.pose_array_copy.domain_labels.push_back(label);
+							//env_sub_container.mapSize(label);
 							domain_goal.push_back(label);
-							std::cout<<"pushing back to goal domain: "<<label<<std::endl;
 							domain_dropoff.push_back(label);
 							domain_loc_d.push_back(label);
 							var_labels_1.push_back(label);
 							var_labels_2.push_back(label);
+							//label_ind_map.push_back(label);
+							 //std::cout<<" MAPPING: "<<label<<" TO: "<<env_sub_container.pose_array_copy.pose_array.poses.size() - 1<<std::endl;
 						} else {
 							{
 								char label_buffer[100]; // sprintf buffer
@@ -323,31 +328,36 @@ int main(int argc, char **argv){
 							domain_loc_d.push_back(label);
 							var_labels_1.push_back(label);
 							var_labels_2.push_back(label);
-							std::cout<<" MAPPING: "<< label <<" to: "<<a<<std::endl;
-							env_sub_container.label_ind_map[label] = a;
+							//label_ind_map[a] = label;
+							 //std::cout<<" MAPPING: "<<label<<" TO: "<<a<<std::endl;
+
 						}
 					}
 				}
+
+				//label_ind_map[0] = "L0";
+				//label_ind_map[1] = "L1";
 				for (int i=0; i<N_obj_elsewhere; ++i) {
 					std::string label;
 					geometry_msgs::Pose temp_pose;
 					drop_off_locs.getUnoccupiedLocation(temp_pose, label);
 					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
-					env_sub_container.pose_array_copy.domain_labels.push_back(label);
-					env_sub_container.mapSize(label);
+					//env_sub_container.pose_array_copy.domain_labels.push_back(label);
+					//env_sub_container.mapSize(label);
 					domain_goal.push_back(label);
-					std::cout<<"pushing back to goal domain: "<<label<<std::endl;
 					domain_dropoff.push_back(label);
 					domain_loc_d.push_back(label);
 					var_labels_1.push_back(label);
 					var_labels_2.push_back(label);
+					//label_ind_map.push_back(label);
+					 //std::cout<<" MAPPING: "<<label<<" TO: "<<env_sub_container.pose_array_copy.pose_array.poses.size() - 1<<std::endl;
+
 				}
 
-				std::vector<std::string> domain_safe;
 				{
 					// safep pose
 					geometry_msgs::Pose temp_pose;
-					temp_pose.position.x = 0.5;
+					temp_pose.position.x = 0.2;
 					temp_pose.position.y = 0.0;
 					temp_pose.position.z = 0.7;
 					temp_pose.orientation.x = 0;
@@ -355,19 +365,24 @@ int main(int argc, char **argv){
 					temp_pose.orientation.z = 0;
 					temp_pose.orientation.w = 1;
 					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
-					env_sub_container.pose_array_copy.domain_labels.push_back("safep");
-					env_sub_container.mapSize("safep");
+					//env_sub_container.pose_array_copy.domain_labels.push_back("safep");
+					//label_ind_map.push_back("safep");
+					 //std::cout<<" MAPPING: "<<"safep"<<" TO: "<<env_sub_container.pose_array_copy.pose_array.poses.size() - 1<<std::endl;
+
+					//env_sub_container.mapSize("safep");
 					domain_pickup.push_back("safep");
 					var_labels_1.push_back("safep");
-					domain_safe.push_back("safep");
 					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
-					env_sub_container.pose_array_copy.domain_labels.push_back("safed");
-					env_sub_container.mapSize("safed");
+					//env_sub_container.pose_array_copy.domain_labels.push_back("safed");
+					//label_ind_map.push_back("safed");
+					 //std::cout<<" MAPPING: "<<"safed"<<" TO: "<<env_sub_container.pose_array_copy.pose_array.poses.size() - 1<<std::endl;
+
+					//env_sub_container.mapSize("safed");
 					domain_dropoff.push_back("safed");
 					var_labels_1.push_back("safed");
-					domain_safe.push_back("safed");
 
 				}
+
 
 				State::setStateDimension(var_labels_1, 0);
 				for (int i=1; i<=a; ++i) {
@@ -379,7 +394,6 @@ int main(int argc, char **argv){
 				State::setDomain("dropoff domain", domain_dropoff);
 				State::setDomain("dropoff location domain", domain_loc_d);
 				State::setDomain("goal domain", domain_goal);
-				State::setDomain("safe domain", domain_safe);
 				State::setStateDimensionLabel(0, "eeLoc");
 				std::vector<bool> which_blocking = {false}; // first dim is eeLoc (not blocking)
 				std::vector<std::string> obj_loc_group;
@@ -404,9 +418,6 @@ int main(int argc, char **argv){
 				BlockingState init_state;
 				init_state.initNewSS();
 				init_state.setState(init_set_state);
-
-
-
 
 				/* ENVIRONMENT: SINGLE OBJECT, TWO DOMAINS (pickup dropoff), ONE LOCATION IN EACH */
 				/*
@@ -601,6 +612,7 @@ int main(int argc, char **argv){
 				}
 
 
+
 				/* Propositions */
 				SimpleCondition p1;
 				p1.addCondition(Condition::SIMPLE, Condition::GROUP, "object locations", Condition::IN_DOMAIN, Condition::DOMAIN, "goal domain");
@@ -638,15 +650,30 @@ int main(int argc, char **argv){
 				prodsys.getPlan(state_sequence, action_sequence);
 
 				std::cout<<"Plan sequence: \n";
+				std::cout<<"MAINstate seq size:" <<state_sequence.size()<<std::endl;
+				std::cout<<"MAINaction seq size:" <<action_sequence.size()<<std::endl;
+
 				for (int i=0; i<action_sequence.size(); ++i) {
 					std::cout<<"\n";
+					std::cout<<"i = "<<i<<std::endl;
 					state_sequence[i]->print();
 					std::cout<<" -> "<<action_sequence[i]<<"\n";
 					state_sequence[i+1]->print();
 					std::cout<<"\n";
 
 				}
+				/*
 				std::cout<<"\n";
+	std_srvs::SetBool yeet;
+	std::cout<<" b4 call:"<<std::endl;
+	if (plan_query_client.call(yeet)) {
+		std::cout<<"hello"<<std::endl;
+	} else {
+		ROS_ERROR("Failed to call service");
+		return 1;
+	}
+	*/
+
 
 				/* EXECUTE PLAN */
 				/*
@@ -677,13 +704,13 @@ int main(int argc, char **argv){
 						plan_query_msg.pickup_object = "none";
 						plan_query_msg.drop_object = "none";
 						int pose_ind = env_sub_container.label_ind_map[state_sequence[i+1]->getVar("eeLoc")];
-						plan_query_msg.manipulator_pose.pose.position.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.x;
-						plan_query_msg.manipulator_pose.pose.position.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.y;
-						plan_query_msg.manipulator_pose.pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z + .3;
-						plan_query_msg.manipulator_pose.pose.orientation.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.x;
-						plan_query_msg.manipulator_pose.pose.orientation.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.y;
-						plan_query_msg.manipulator_pose.pose.orientation.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.z;
-						plan_query_msg.manipulator_pose.pose.orientation.w = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.w;
+						plan_query_msg.manipulator_pose.position.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.x;
+						plan_query_msg.manipulator_pose.position.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.y;
+						plan_query_msg.manipulator_pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z + .3;
+						plan_query_msg.manipulator_pose.orientation.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.x;
+						plan_query_msg.manipulator_pose.orientation.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.y;
+						plan_query_msg.manipulator_pose.orientation.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.z;
+						plan_query_msg.manipulator_pose.orientation.w = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.w;
 
 					} else if (action_sequence[i] == "release") {
 						plan_query_msg.pickup_object = "none";
@@ -734,12 +761,7 @@ int main(int argc, char **argv){
 				}
 				*/
 
-				SimpleCondition safe_cond;
-				safe_cond.addCondition(Condition::SIMPLE, Condition::LABEL, "eeLoc", Condition::IN_DOMAIN, Condition::DOMAIN, "safe domain");
-				safe_cond.setCondJunctType(Condition::SIMPLE, Condition::CONJUNCTION);
-				for (int i=0; i<domain_safe.size(); ++i) {
-					std::cout<<" printing safe domain: "<<domain_safe[i]<<std::endl;
-				}
+
 
 				bool succeeded = true;
 				for (int i=0; i<action_sequence.size(); ++i) {
@@ -747,59 +769,104 @@ int main(int argc, char **argv){
 						// First query should send the environment, there
 						// is no need to keep updating the env after the 
 						// first query
+
+						/*
 						plan_query_srv_msg.request.setup_environment = true;
 						plan_query_srv_msg.request.bag_poses.poses.resize(env_sub_container.num_bags);
 						plan_query_srv_msg.request.bag_labels = obj_loc_group;
-						for (int i=0; i<env_sub_container.num_bags; ++i)  {
-							plan_query_srv_msg.request.bag_poses.poses[i].position.x = env_sub_container.pose_array_copy.pose_array.poses[i].position.x;
-							plan_query_srv_msg.request.bag_poses.poses[i].position.y = env_sub_container.pose_array_copy.pose_array.poses[i].position.y;
-							plan_query_srv_msg.request.bag_poses.poses[i].position.z = env_sub_container.pose_array_copy.pose_array.poses[i].position.z;
-							plan_query_srv_msg.request.bag_poses.poses[i].orientation.x = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.x;
-							plan_query_srv_msg.request.bag_poses.poses[i].orientation.y = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.y;
-							plan_query_srv_msg.request.bag_poses.poses[i].orientation.z = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.z;
-							plan_query_srv_msg.request.bag_poses.poses[i].orientation.w = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.w;
+						std::cout<<"me in set bag pose"<<std::endl;
+						for (int ii=0; ii<env_sub_container.num_bags; ++ii)  {
+							std::cout<<"iter: "<<ii<<std::endl;
+							plan_query_srv_msg.request.bag_poses.poses[ii].position.x = env_sub_container.pose_array_copy.pose_array.poses[ii].position.x;
+							plan_query_srv_msg.request.bag_poses.poses[ii].position.y = env_sub_container.pose_array_copy.pose_array.poses[ii].position.y;
+							plan_query_srv_msg.request.bag_poses.poses[ii].position.z = env_sub_container.pose_array_copy.pose_array.poses[ii].position.z;
+							plan_query_srv_msg.request.bag_poses.poses[ii].orientation.x = env_sub_container.pose_array_copy.pose_array.poses[ii].orientation.x;
+							plan_query_srv_msg.request.bag_poses.poses[ii].orientation.y = env_sub_container.pose_array_copy.pose_array.poses[ii].orientation.y;
+							plan_query_srv_msg.request.bag_poses.poses[ii].orientation.z = env_sub_container.pose_array_copy.pose_array.poses[ii].orientation.z;
+							plan_query_srv_msg.request.bag_poses.poses[ii].orientation.w = env_sub_container.pose_array_copy.pose_array.poses[ii].orientation.w;
 						}
+						std::cout<<"me out set bag pose"<<std::endl;
+						
+						// debug
+						for (int ii=0; ii<plan_query_srv_msg.request.bag_poses.poses.size(); ++ii)  {
+							std::cout<<plan_query_srv_msg.request.bag_labels[ii]<<std::endl;
+							std::cout<<plan_query_srv_msg.request.bag_poses.poses[ii].position.x <<std::endl;
+							std::cout<<plan_query_srv_msg.request.bag_poses.poses[ii].position.y <<std::endl;
+							std::cout<<plan_query_srv_msg.request.bag_poses.poses[ii].position.z <<std::endl;
+							std::cout<<plan_query_srv_msg.request.bag_poses.poses[ii].orientation.x <<std::endl;
+							std::cout<<plan_query_srv_msg.request.bag_poses.poses[ii].orientation.y <<std::endl;
+							std::cout<<plan_query_srv_msg.request.bag_poses.poses[ii].orientation.z <<std::endl;
+							std::cout<<plan_query_srv_msg.request.bag_poses.poses[ii].orientation.w <<std::endl;
+						}
+						//
+						*/
+							
+						
 					} else {
-						plan_query_srv_msg.request.setup_environment = false;
+						//plan_query_srv_msg.request.setup_environment = false;
 					}
 					std::cout<<"working on action: "<<action_sequence[i]<<std::endl;
 					if (action_sequence[i] == "move") {
+						/*
 						plan_query_srv_msg.request.pickup_object = "none";
 						plan_query_srv_msg.request.drop_object = "none";
-						std::cout<<" MOVING TO:"<< state_sequence[i+1]->getVar("eeLoc")<<std::endl;
-						state_sequence[i+1]->print();
-						bool is_safe_loc = safe_cond.evaluate(state_sequence[i+1]);
-						std::cout<<" SAFE LOCATION?: "<<is_safe_loc<<std::endl;
-						if (is_safe_loc){
-							plan_query_srv_msg.request.safe_config = true;
-						} else {
-							plan_query_srv_msg.request.safe_config = false;
-							int pose_ind = env_sub_container.label_ind_map[state_sequence[i+1]->getVar("eeLoc")];
-							//int pose_ind = env_sub_container.label_ind_map["L_0"];
-							//pose_ind = 1;
-							std::cout<<" WITH IND: "<<pose_ind<<std::endl;
-							plan_query_srv_msg.request.manipulator_pose.position.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.x;
-							plan_query_srv_msg.request.manipulator_pose.position.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.y;
-							plan_query_srv_msg.request.manipulator_pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z;
-							plan_query_srv_msg.request.manipulator_pose.orientation.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.x;
-							plan_query_srv_msg.request.manipulator_pose.orientation.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.y;
-							plan_query_srv_msg.request.manipulator_pose.orientation.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.z;
-							plan_query_srv_msg.request.manipulator_pose.orientation.w = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.w;
+						*/
+
+						//std::cout<<" MOVING TO:"<< state_sequence[i+1]->getVar("eeLoc")<<std::endl;
+						//std::string temp_str = state_sequence[i+1]->getVar("eeLoc");
+						//std::string temp_str = "somethingelse";
+						//std::cout<<" TEMP_STR: "<<temp_str<<std::endl;
+						/*
+						int pose_ind;
+						for (int ii=0; ii<label_ind_map.size(); ++ii) {
+							if (label_ind_map[ii] == temp_str) {
+								pose_ind = ii;
+							}
 						}
-						if (plan_query_client.call(plan_query_srv_msg)) {
-							std::cout<<"i recieved: "<<plan_query_srv_msg.response.success<<std::endl;
+						*/
+						//pose_ind = 2;
+						//std::cout<<" GOT INDEX: "<<pose_ind<<std::endl;
+						/*
+						plan_query_srv_msg.request.manipulator_pose.position.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.x;
+						plan_query_srv_msg.request.manipulator_pose.position.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.y;
+						plan_query_srv_msg.request.manipulator_pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z + .3;
+						plan_query_srv_msg.request.manipulator_pose.orientation.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.x;
+						plan_query_srv_msg.request.manipulator_pose.orientation.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.y;
+						plan_query_srv_msg.request.manipulator_pose.orientation.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.z;
+						plan_query_srv_msg.request.manipulator_pose.orientation.w = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.w;
+
+						// debug
+						std::cout<<"printing msg...\nmanipulator pose: "<<std::endl;
+						std::cout<<plan_query_srv_msg.request.manipulator_pose.position.x<<std::endl;
+						std::cout<<plan_query_srv_msg.request.manipulator_pose.position.y<<std::endl;
+						std::cout<<plan_query_srv_msg.request.manipulator_pose.position.z<<std::endl;
+						std::cout<<plan_query_srv_msg.request.manipulator_pose.orientation.x<<std::endl;
+						std::cout<<plan_query_srv_msg.request.manipulator_pose.orientation.y<<std::endl;
+						std::cout<<plan_query_srv_msg.request.manipulator_pose.orientation.z<<std::endl;
+						std::cout<<plan_query_srv_msg.request.manipulator_pose.orientation.w<<std::endl;
+						std::cout<<" setup_env: "<<plan_query_srv_msg.request.setup_environment<<std::endl;
+						//
+						*/
+
+						//bool yeet = plan_query_client.call(plan_query_srv_msg);
+						std_srvs::SetBool yeet;
+						//yeet.request.drop_object = "none";
+						std::cout<<" b4 call:"<<std::endl;
+						if (plan_query_client.call(yeet)) {
+							std::cout<<"hello"<<std::endl;
+							//std::cout<<"i recieved: "<<plan_query_srv_msg.response.success<<std::endl;
 							if (!plan_query_srv_msg.response.success) {
 								succeeded = false;
 								break;
 							}
 						} else {
 							ROS_ERROR("Failed to call service");
+							return 1;
 						}
 
 
-					} else if (action_sequence[i] == "release") {
+					}/* else if (action_sequence[i] == "release") {
 						plan_query_srv_msg.request.pickup_object = "none";
-						plan_query_srv_msg.request.safe_config = false;
 						std::string arg_dim_label;
 						// Look up the pre state for the action (ind i)
 						// to find which dimension has variable "ee"
@@ -822,7 +889,6 @@ int main(int argc, char **argv){
 
 					} else if (action_sequence[i] == "grasp") {
 						plan_query_srv_msg.request.drop_object = "none";
-						plan_query_srv_msg.request.safe_config = false;
 						std::string arg_dim_label;
 						// Look up the post state for the action (ind i+1)
 						// to find which dimension has variable "ee"
@@ -845,11 +911,9 @@ int main(int argc, char **argv){
 						}
 
 					} else if (action_sequence[i] == "translate") {
-						plan_query_srv_msg.request.safe_config = false;
 						plan_query_srv_msg.request.pickup_object = "none";
 						plan_query_srv_msg.request.drop_object = "none";
-						// call translator service here:
-					}
+					}*/
 				}
 
 
