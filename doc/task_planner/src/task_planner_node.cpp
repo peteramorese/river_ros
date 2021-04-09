@@ -8,6 +8,7 @@
 #include "river_ros/PlanningQueryStatus_msg.h"
 #include "river_ros/BagConfigPoseArray_msg.h"
 #include "geometry_msgs/Pose.h"
+#include "geometry_msgs/Point.h"
 #include "edge.h"
 #include "astar.h"
 #include "state.h"
@@ -79,6 +80,15 @@ struct EnvironmentSub {
 		std::cout<<" MAPPING: "<<label<<" to: "<<pose_array_copy.pose_array.poses.size() - 1<<std::endl;
 		label_ind_map[label] = pose_array_copy.pose_array.poses.size() - 1;
 	}
+};
+
+class SensoryInfoSub {
+	private:
+	public:
+		void sensoryInfoCB(const geometry_msgs::Point::ConstPtr& info) {
+			
+		}
+
 };
 
 class PlanningQuerySub {
@@ -216,6 +226,12 @@ int main(int argc, char **argv){
 	// Service client to send a planning query to manipulator node
 	ros::ServiceClient plan_query_client = TP_NH.serviceClient<river_ros::PlanningQuery_srv>("manipulator_node/task_planner/planning_query");
 	river_ros::PlanningQuery_srv plan_query_srv_msg;
+
+	// Command the EEF and translator
+	ros::Publisher command_TP_pub = TP_NH.advertise<geometry_msgs::Point>("task_planner/command",1);
+	geometry_msgs::Point command_TP_msg;
+
+	//ros::Subscriber sensory_info_TP_sub = TP_NH.subscribe("arduino/sensory_info", 1, 
 
 	// Publish the current planning query
 	/*
