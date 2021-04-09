@@ -1,1 +1,11 @@
-#add_library(<lib name> <source file>)
+add_library(EstimationLib 
+	BAG.cpp 
+	DATA.cpp 
+	ERRORS.cpp
+	MARKER.cpp
+	matrix.cpp
+	oriDetermine
+	SENSOR.cpp
+	SENSOR_MIN.cpp
+	SYSTEM.cpp
+)

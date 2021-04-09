@@ -182,14 +182,59 @@ void BAG::estimate_ori()
 		}
 	}
 
-	std::array<double, 4> quat = dcm_to_quat(Q);
+	quat = dcm_to_quat(Q);
 }
 
 
 std::array<double, 4> BAG::dcm_to_quat(mat Q)
 {
 	std::array<double, 4> quat;
-	quat = {1, 1, 1, 1};
+
+	double q1, q2, q3, q4;
+	double q1_sq, q2_sq, q3_sq, q4_sq;
+	q1_sq = 0.25*(1 + Q(0, 0) - Q(1, 1) - Q(2, 2));
+	q2_sq = 0.25*(1 - Q(0, 0) + Q(1, 1) - Q(2, 2));
+	q3_sq = 0.25*(1 - Q(0, 0) - Q(1, 1) + Q(2, 2));
+	q4_sq = 0.25*(1 + Q(0, 0) + Q(1, 1) + Q(2, 2));
+
+	if(q1_sq >= q2_sq && q1_sq >= q3_sq && q1_sq >= q4_sq)
+	{
+		q1 = sqrt(q1_sq);
+		q2 = 1/(4*q1) * (Q(0,1) + Q(1, 0));
+		q3 = 1/(4*q1) * (Q(2, 0) + Q(0, 2));
+		q4 = 1/(4*q1) * (Q(1, 2) - Q(2, 1));
+	}
+	else if(q2_sq >= q1_sq && q2_sq >= q3_sq && q2_sq >= q4_sq)
+	{
+		q2 = sqrt(q2_sq);
+		q1 = 1/(4*q2) * (Q(0,1) + Q(1, 0));
+		q3 = 1/(4*q2) * (Q(1, 2) + Q(2, 1));
+		q4 = 1/(4*q2) * (Q(2, 0) - Q(0, 2));
+	}
+	else if(q3_sq >= q1_sq && q3_sq >= q2_sq && q3_sq >= q4_sq)
+	{
+		q3 = sqrt(q3_sq);
+		q1 = 1/(4*q3) * (Q(2, 0) + Q(0, 2));
+		q2 = 1/(4*q3) * (Q(1, 2) + Q(2, 1));
+		q4 = 1/(4*q3) * (Q(0, 1) - Q(1, 0));
+	}
+	else if(q4_sq >= q1_sq && q4_sq >= q2_sq && q4_sq >= q3_sq)
+	{
+		q4 = sqrt(q4_sq);
+		q1 = 1/(4*q4) * (Q(1, 2) - Q(2, 1));
+		q2 = 1/(4*q4) * (Q(2, 0) - Q(0, 2));
+		q3 = 1/(4*q4) * (Q(0, 1) - Q(1, 0));
+	}
+	else
+	{
+		cout << "There was an error calculating the quaternion from the DCM:" << endl;
+		cout << "Q = \t[" << Q(0, 0) << "\t" << Q(0, 1) << "\t" << Q(0, 2) << "]" << endl;
+		cout << "\t[" << Q(1, 0) << "\t" << Q(1, 1) << "\t" << Q(1, 2) << "]" <<  endl;
+		cout << "\t[" << Q(2, 0) << "\t" << Q(2, 1) << "\t" << Q(2, 2) << "]" << endl;
+	}
+
+
+	quat = {q1, q2, q3, q4};
 	return quat;
 }
 
@@ -224,31 +269,6 @@ std::vector<std::pair<double[3], int>> BAG::get_bag_pair(bool def)
 			bag_def[i].second = i;
 		}
 	}
-
-	// bag_def[0].first[0] = 0;
-	// bag_def[0].first[1] = 0;
-	// bag_def[0].first[2] = 0.5*height;
-	// bag_def[0].second = 0;
-	// bag_def[1].first[0] = 0;
-	// bag_def[1].first[1] = 0;
-	// bag_def[1].first[2] = -0.5*height;
-	// bag_def[1].second = 1;
-	// bag_def[2].first[0] = 0.5*width;
-	// bag_def[2].first[1] = 0;
-	// bag_def[2].first[2] = 0;
-	// bag_def[2].second = 2;
-	// bag_def[3].first[0] = -0.5*width;
-	// bag_def[3].first[1] = 0;
-	// bag_def[3].first[2] = 0;
-	// bag_def[3].second = 3;
-	// bag_def[4].first[0] = 0;
-	// bag_def[4].first[1] = 0.5*height;
-	// bag_def[4].first[2] = 0;
-	// bag_def[4].second = 4;
-	// bag_def[5].first[0] = 0;
-	// bag_def[5].first[1] = -0.5*height;
-	// bag_def[5].first[2] = 0;
-	// bag_def[5].second = 5;
 
 	vector<int> mark;
 

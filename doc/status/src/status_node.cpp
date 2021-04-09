@@ -2,6 +2,7 @@
 #include "ros/ros.h"
 #include "river_ros/BagConfigPoseArray_msg.h"
 #include "river_ros/PlanExecute_srv.h"
+#include "river_ros/Observe_srv.h"
 #include "std_msgs/String.h"
 #include "edge.h"
 
@@ -76,14 +77,29 @@ int main(int argc, char **argv) {
 	ros::ServiceClient plan_ex_client = status_NH.serviceClient<river_ros::PlanExecute_srv>("status/plan_execute");
 	river_ros::PlanExecute_srv plan_ex_srv_msg;
 
+	// Start observe 
+	ros::ServiceClient obs_ex_client = status_NH.serviceClient<river_ros::Observe_srv>("status/observe");
+	river_ros::Observe_srv obs_srv_msg;
+
+
 	/* Super Task Planner */
 
 	while (ros::ok() && curr_node != end_node) {
 		auto currptr = heads[curr_node]->adjptr;
 		if (action) {
 			temp_action_label = currptr->label;
-			std::cout<<"temp_action_label: "<<temp_action_label<<std::endl;
+			ROS_INFO_NAMED("status_node","Current label: %s",temp_action_label.c_str());
 			if (temp_action_label == "observe") {
+				obs_srv_msg.request.time_sent = ros::Time::now();
+				if (obs_ex_client.call(obs_srv_msg)) {
+					temp_observation_label = obs_srv_msg.response.observation_label;		
+					std::cout<<temp_observation_label<<std::endl;
+				} else {
+					ROS_ERROR_NAMED("status_node","Failed to call service: observe");
+					return 1;
+				}
+							
+				/*
 				bool bags_found;
 				ObserveSub obs_sub_container(bags_found);
 				ros::Subscriber obs_sub = status_NH.subscribe("bag_config/bag_configs", 1, &ObserveSub::observeSubCB, &obs_sub_container);
@@ -96,6 +112,7 @@ int main(int argc, char **argv) {
 				if (bags_found) {
 					obs_sub_container.getObservationLabel(temp_observation_label);
 				}
+				*/
 			} else if (temp_action_label == "plan_execute") {
 				plan_ex_srv_msg.request.time_sent = ros::Time::now();
 				if (plan_ex_client.call(plan_ex_srv_msg)) {
@@ -113,6 +130,7 @@ int main(int argc, char **argv) {
 						}
 					}	
 				} else {
+					return 1;
 					ROS_ERROR_NAMED("status_node","Failed to call service: plan_execute");
 				}
 			} else if (temp_action_label == "observe_check") {
@@ -125,7 +143,6 @@ int main(int argc, char **argv) {
 				} else {
 					ROS_ERROR_NAMED("status_node","Failed to call service: observe");
 				}
-				*/
 
 				// This is copied from the "observe" action but this probably
 				// should be some sort of service that checks the environment.
@@ -143,6 +160,21 @@ int main(int argc, char **argv) {
 					//getObservationLabel(temp_observation_label);
 					temp_observation_label = "task_complete";
 				}
+				*/
+				obs_srv_msg.request.time_sent = ros::Time::now();
+				std::string obs_check_lbl;
+				if (obs_ex_client.call(obs_srv_msg)) {
+					obs_check_lbl = obs_srv_msg.response.observation_label;		
+				} else {
+					return 1;
+					ROS_ERROR_NAMED("status_node","Failed to call service: observe");
+				}
+				if (obs_check_lbl == "cargo_found" || obs_check_lbl == "cargo_not_found") {
+					ROS_INFO_NAMED("status_node","Observe check label: %s",obs_check_lbl.c_str());
+				} else {
+					ROS_ERROR_NAMED("status_node","Unrecognized observation label from action: observe check");
+				}
+
 			} else if (temp_action_label == "shutdown") {
 				ROS_INFO_NAMED("status_node","Shutting down...");
 			} else {
@@ -152,11 +184,10 @@ int main(int argc, char **argv) {
 			curr_node = currptr->nodeind;
 		} else {
 			bool observation_found = false;
-			//ros::Rate r(1);
+			ros::Rate r(1);
 			while (ros::ok() && currptr != nullptr) {
-				//r.sleep();
-				std::cout<<"searching connectivity... label: "<<currptr->label<<std::endl;
-				std::cout<<"temp_observation_label: "<<temp_observation_label<<std::endl;
+				r.sleep();
+				std::cout<<"saw: "<<currptr->label<<" comparing to:"<<temp_observation_label<<std::endl;
 				if (currptr->label == temp_observation_label) {
 					curr_node = currptr->nodeind;
 					observation_found = true;

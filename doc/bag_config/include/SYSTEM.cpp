@@ -5,14 +5,13 @@ using namespace arma;
 using namespace std;
 
 
-SYSTEM::SYSTEM(bool s, vector<bool> p)
+SYSTEM::SYSTEM(bool s)
 {
 	// Initializes the SYSTEM object
 
 	cout << "Initializing System...\t\t" << endl;
 
 	sim = s; // Set the software run mode
-	plot = p; // Set the plotting flag
 
 	init_default_sensors(); // Initialize the default sensor network
 
@@ -39,6 +38,8 @@ SYSTEM::SYSTEM(bool s, vector<bool> p)
 		
 	stop_est_cov_thrsh = cov_thrsh;
 	stop_est_time = time_thrsh;
+
+	reset_bag_config_msg();
 
 	cout << "DONE" << endl;
 };
@@ -185,13 +186,9 @@ void SYSTEM::calibrate(std::vector<int> s)
 	std::chrono::duration<double> delta_time;
 	bool time_stop = false;
 
-	// ros::VP_string remappings;
-	// remappings.push_back(std::make_pair("chatter", "chatter"));
-	// ros::init(remappings, "calibrator");
+	// ros::NodeHandle cal_nh;
 
-	ros::NodeHandle cal_nh;
-
-	ros::Subscriber cal_sub = cal_nh.subscribe("chatter", 1000, &SYSTEM::calibrate_callback, this);
+	ros::Subscriber cal_sub = est_nh.subscribe("chatter", 1000, &SYSTEM::calibrate_callback, this);
 
 	bool loop = true;
 
@@ -286,15 +283,15 @@ void SYSTEM::calibrate(std::vector<int> s)
 		// sensors[s[i]].calibrate_sensor(Y[i], cal, core, cnst); // Calibrate Sensor SID
 
 		// Update ros params
-		bool upd_sens = false;
-		string param_str = "/bag_config_node/sensor_";
-		param_str = param_str + to_string(s[i]) + "/position";
-		if(CheckParam(param_str, 1, upd_sens))
+		bool upd_params;
+		param_str = "/bag_config_node/update_params";
+		upd_params = false;
+		if(CheckParam(param_str, 1, upd_params))
 		{
-			ros::param::get(param_str, upd_sens);
+			ros::param::get(param_str, upd_params);
 		}
 
-		if(upd_sens)
+		if(upd_params)
 		{
 			vector<double> sens_upd;
 			EKF e = sensors[s[i]].ekf.back();
@@ -305,20 +302,30 @@ void SYSTEM::calibrate(std::vector<int> s)
 			}
 			else
 			{
-				string warn_str = "Update for rosparam " + param_str + " has failed.";
+				string warn_str = "Update to rosparam " + param_str + " has failed.";
 				WARNING(warn_str);
 			}
-		}
-
-		if(plot[0] == true) // If the plot flag is set to true
-		{
-			sensors[s[i]].plot_ekf(); // Plot the EKF results
-			// sensors[i].plot_e_y();
 		}
 
 		// cout << "DONE" << endl;
 	}
 
+	// Plot Calibration Results
+	bool plot_c;
+	param_str = "/bag_config_node/plot/calibration";
+	plot_c = false;
+	if(CheckParam(param_str, 1, plot_c))
+	{
+		ros::param::get(param_str, plot_c);
+	}
+
+	if(plot_c) // If the plot flag is set to true
+	{
+		for(int i = 0; i < s.size(); i++)
+		{
+			sensors[s[i]].plot_ekf(); // Plot the EKF results
+		}
+	}
 }
 
 
@@ -326,6 +333,8 @@ void SYSTEM::calibrate_pickup()
 {
 	// Selects the correct sensors to calibrate (Sensors 0 - 4)
 	// 
+
+	int cal_num_mark;
 
 	string param_str;
 	std::vector<int> s;
@@ -346,6 +355,32 @@ void SYSTEM::calibrate_pickup()
 
 	if(run_cal_p)
 	{
+		cout << "Press Enter to calibrate." << endl;
+		cin.get();
+
+		param_str = "/bag_config_node/calibrator/pickup/num_markers";
+		if(CheckParam(param_str, 2))
+		{
+			ros::param::get(param_str, cal_num_mark);
+		}
+		
+		BAG calibrator_pickup(cal_num_mark);
+
+		vector<double> m_i_pos;
+
+		for(int i = 0; i < cal_num_mark; i++)
+		{
+			param_str = "/bag_config_node/calibrator/pickup/marker_";
+			param_str = param_str + to_string(i);
+			if(CheckParam(param_str, 2) && CheckParamSize(param_str, cnst.n))
+			{
+				ros::param::get(param_str, m_i_pos);
+				calibrator_pickup.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
+			}
+		}
+
+		assign_bag(calibrator_pickup);
+
 		calibrate(s);
 	}
 
@@ -357,6 +392,8 @@ void SYSTEM::calibrate_dropoff()
 {
 	// Selects the correct sensors to calibrate (Sensors 5 - 9)
 	// 
+
+	int cal_num_mark;
 
 	string param_str;
 	std::vector<int> s;
@@ -376,6 +413,32 @@ void SYSTEM::calibrate_dropoff()
 
 	if(run_cal_d)
 	{
+		cout << "Press Enter to calibrate." << endl;
+		cin.get();
+
+		param_str = "/bag_config_node/calibrator/dropoff/num_markers";
+		if(CheckParam(param_str, 2))
+		{
+			ros::param::get(param_str, cal_num_mark);
+		}
+
+		BAG calibrator_dropoff(cal_num_mark);
+
+		vector<double> m_i_pos;
+
+		for(int i = 0; i < cal_num_mark; i++)
+		{
+			param_str = "/bag_config_node/calibrator/dropoff/marker_";
+			param_str = param_str + to_string(i);
+			if(CheckParam(param_str, 2) && CheckParamSize(param_str, cnst.n))
+			{
+				ros::param::get(param_str, m_i_pos);
+				calibrator_dropoff.markers[i].position = {m_i_pos[0], m_i_pos[1], m_i_pos[2]};
+			}
+		}
+
+		assign_bag(calibrator_dropoff);
+
 		calibrate(s);
 	}
 
@@ -601,10 +664,6 @@ void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
 				{
 					ros::param::get(param_str, verbose);
 				}
-				if(verbose)
-				{
-					cout << "Estimating Marker " << cur_mid << endl;
-				}
 
 				Y.push_back(Y_k);
 				bag.markers[cur_mid].estimate_pos(Y, sensors_min, core, cnst);
@@ -662,7 +721,7 @@ void SYSTEM::run_estimator(std::vector<int> s)
 	std::chrono::duration<double> time_elapsed;
 	bool time_stop = false;
 
-	ros::NodeHandle est_nh;
+	// ros::NodeHandle est_nh;
 
 	// Create ros subscriber
 	ros::Subscriber est_sub = est_nh.subscribe("chatter", 1000, &SYSTEM::estimator_callback, this);
@@ -712,6 +771,26 @@ void SYSTEM::run_estimator(std::vector<int> s)
 		cout << "Done" << endl;
 	}
 
+	// Plot the estimator restults
+	bool plot_e;
+	string param_str = "/bag_config_node/plot/estimation";
+	plot_e = false;
+	if(CheckParam(param_str, 1, plot_e))
+	{
+		ros::param::get(param_str, plot_e);
+	}
+
+	if(plot_e)
+	{
+		for(int i = 0; i < bag.markers.size(); i++)
+		{
+			if(bag.markers[i].updated)
+			{
+				bag.markers[i].plot_ekf();
+			}
+		}
+	}
+
 	cout << "Running Orientation Estimator..." << endl;
 
 	int upd_markers = 0;
@@ -742,14 +821,60 @@ void SYSTEM::run_estimator_pickup()
 {
 	// Function to run the estimation algorithm at the pickup location
 
-	std::vector<int> s;
+	string param_str;
 
-	for(int i = 0; i < 5; i++)
+	param_str = "/bag_config_node/verbose";
+	bool verbose = true;
+	if(CheckParam(param_str, 1, verbose))
 	{
-		s.push_back(i);
+		ros::param::get(param_str, verbose);
 	}
 
-	run_estimator(s);
+	param_str = "/bag_config_node/run_estimation";
+	bool run_est = true;
+	if(CheckParam(param_str, 1, run_est))
+	{
+		ros::param::get(param_str, run_est);
+	}
+
+	if(run_est)
+	{
+		if(verbose)
+		{
+			cout << "Estimating pickup location." << endl;
+		}
+
+		string domain = "pickup";
+		BAG bag_p;
+		assign_bag(bag_p);
+
+		bool mult_bags = false; // Assume there is a single bag in the core
+		param_str = "/bag_config_node/multiple_bags";
+		if(CheckParam(param_str, 1, mult_bags))
+		{
+			ros::param::get(param_str, mult_bags);
+		}
+
+		std::vector<int> s;
+
+		for(int i = 0; i < 5; i++)
+		{
+			s.push_back(i);
+		}
+
+		run_estimator(s);
+
+		if(!mult_bags)
+		{
+			upd_bag_config_msg(domain);
+		}
+
+		if(verbose)
+		{
+			cout << "Center: " << bag.center[0] << "  " << bag.center[1] << "  " << bag.center[2] << endl;
+			cout << "Done estimating pickup location." << endl;
+		}
+	}
 }
 
 
@@ -759,12 +884,213 @@ void SYSTEM::run_estimator_dropoff()
 
 	std::vector<int> s;
 
-	for(int i = 5; i < 10; i++)
+	string param_str;
+
+	param_str = "/bag_config_node/verbose";
+	bool verbose = true;
+	if(CheckParam(param_str, 1, verbose))
 	{
-		s.push_back(i);
+		ros::param::get(param_str, verbose);
 	}
 
-	run_estimator(s);
+	param_str = "/bag_config_node/run_estimation";
+	bool run_est = true;
+	if(CheckParam(param_str, 1, run_est))
+	{
+		ros::param::get(param_str, run_est);
+	}
+
+	if(run_est)
+	{
+		if(verbose)
+		{
+			cout << "Estimating dropoff location." << endl;
+		}
+
+		string domain = "dropoff";
+		BAG bag_d;
+		assign_bag(bag_d);
+
+		std::vector<int> s;
+
+		for(int i = 5; i < 10; i++)
+		{
+			s.push_back(i);
+		}
+
+		run_estimator(s);
+
+		upd_bag_config_msg(domain);
+
+		if(verbose)
+		{
+			cout << "Center: " << bag.center[0] << "  " << bag.center[1] << "  " << bag.center[2] << endl;
+			cout << "Done estimating dropoff location." << endl;
+		}
+	}
+}
+
+
+bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ros::Observe_srv::Response &res)
+{
+
+	res.time_received = ros::Time::now();
+
+	reset_bag_config_msg();
+
+	// if (we found all of the bags)
+		bag_config_msg.bags_found = true;
+		bag_config_msg.observation_label = "cargo_found";
+		// else
+		// bag_configs.bags_found = false;
+		// bag_configs.observation_label = "cargo_not_found";
+		bag_config_msg.pose_array.header.stamp = ros::Time::now();
+		bag_config_msg.pose_array.poses.resize(2);
+		bag_config_msg.domain_labels.resize(2);
+
+		bag_config_msg.domain_labels[0] = "pickup location domain";
+		bag_config_msg.pose_array.poses[0].position.x = .6;
+		bag_config_msg.pose_array.poses[0].position.y = .6;
+		bag_config_msg.pose_array.poses[0].position.z = .1;
+		bag_config_msg.pose_array.poses[0].orientation.x = 0;
+		bag_config_msg.pose_array.poses[0].orientation.y = 0;
+		bag_config_msg.pose_array.poses[0].orientation.z = 0;
+		bag_config_msg.pose_array.poses[0].orientation.w = 1;
+
+		bag_config_msg.domain_labels[1] = "pickup location domain";
+		bag_config_msg.pose_array.poses[1].position.x = -.6;
+		bag_config_msg.pose_array.poses[1].position.y = .6;
+		bag_config_msg.pose_array.poses[1].position.z = .1;
+		bag_config_msg.pose_array.poses[1].orientation.x = 0;
+		bag_config_msg.pose_array.poses[1].orientation.y = 0;
+		bag_config_msg.pose_array.poses[1].orientation.z = 1;
+		bag_config_msg.pose_array.poses[1].orientation.w = 0;
+
+		res.observation_label = "cargo_found";
+
+	// run_estimator_pickup();
+
+	// if(bag.updated)
+	// {
+	// 	res.observation_label = "cargo_found";
+	// }
+	// else
+	// {
+	// 	res.observation_label = "cargo_not_found";
+	// }
+
+	// run_estimator_dropoff();
+
+	// if(bag.updated)
+	// {
+	// 	res.observation_label = "cargo_found";
+	// }
+	// else
+	// {
+	// 	res.observation_label = "cargo_not_found";
+	// }
+		return true;
+}
+
+
+void SYSTEM::loop_estimator()
+{
+	string param_str = "/bag_config_node/run_estimation";
+	bool run_est = true;
+	if(CheckParam(param_str, 1, run_est))
+	{
+		ros::param::get(param_str, run_est);
+	}
+
+	if(run_est)
+	{
+		ros::ServiceServer service = est_nh.advertiseService("status/observe", &SYSTEM::observe_srv_callback, this);
+
+		while(ros::ok())
+		{
+			send_bag_config_msg();
+
+			ros::spinOnce();
+		}
+	}
+}
+
+
+void SYSTEM::reset_bag_config_msg()
+{
+	bag_config_msg.pose_array.poses.clear();
+	bag_config_msg.domain_labels.clear();
+	bag_config_msg.bags_found = false;
+	bag_config_msg.observation_label = "cargo_not_found";
+}
+
+
+void SYSTEM::upd_bag_config_msg(string domain)
+{
+
+	bag_config_msg.pose_array.header.stamp = ros::Time::now();
+
+	if(bag.bag_found)
+	{
+		bag_config_msg.bags_found = true;
+
+		if(domain == "pickup")
+		{
+			bag_config_msg.domain_labels[0] = "pickup location domain";
+		}
+		else if(domain == "dropoff")
+		{
+			bag_config_msg.domain_labels[0] = "dropoff location domain";
+		}
+
+		geometry_msgs::Pose tmp_pose;
+		tmp_pose.position.x = bag.center[0];
+		tmp_pose.position.y = bag.center[1];
+		tmp_pose.position.z = bag.center[2];
+		tmp_pose.orientation.x = bag.quat[0];
+		tmp_pose.orientation.y = bag.quat[1];
+		tmp_pose.orientation.z = bag.quat[2];
+		tmp_pose.orientation.w = bag.quat[3];
+
+		bag_config_msg.pose_array.poses.push_back(tmp_pose);
+	}
+}
+
+
+void SYSTEM::send_bag_config_msg()
+{
+	ros::Publisher BagConfigPub = est_nh.advertise<river_ros::BagConfigPoseArray_msg>("bag_config/bag_configs", 10);
+
+	BagConfigPub.publish(bag_config_msg);
+	ros::spinOnce();
+}
+
+
+void SYSTEM::update_params()
+{
+	bool upd_params;
+	string param_str = "/bag_config_node/update_params";
+	upd_params = false;
+	if(CheckParam(param_str, 1, upd_params))
+	{
+		ros::param::get(param_str, upd_params);
+	}
+
+	if(upd_params)
+	{
+		string param_path;
+		string param_str = "/bag_config_node/pack_file_path";
+		if(CheckParam(param_str, 1))
+		{
+			ros::param::get(param_str, param_path);
+		
+			stringstream cmd_strm;
+			cmd_strm << "rosparam dump " << param_path << "river_ros/config/params.yaml /bag_config_node";
+			string cmd_str = cmd_strm.str();
+			const char *command = cmd_str.c_str();
+			int garbage = system(command);
+		}
+	}
 }
 
 

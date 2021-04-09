@@ -1,72 +1,64 @@
----
-# bag_config_node Parameters: /bag_config_node/
-software_mode: "Flight"
-update_params: False
-run_calibration: 
-  pickup: True
-  dropoff: False
-run_estimation: False
-multiple_bags: False
-verbose: True
-plot:
-  calibration: True
-  estimation: False
-thresholds:
-  covariance: 0.001
-  time: 20
-calibrator:
-  pickup:
-    num_markers: 5
-    marker_0: [0, 0, -0.4318] # [m]
-    marker_1: [-0.1246, 0.3143, -0.4318] # [m]
-    marker_2: [0.0735, 0.3366, -0.4318] # [m]
-    marker_3: [0.0708, -0.2588, -0.4318] # [m]
-    marker_4: [-0.1139, -0.2604, -0.4318] # [m]
-    marker_5: [0.75, 0.89, 0.92] # [m]
-  dropoff:
-    num_markers: 3
-    marker_0: [1.00, 0.75, -0.9] # [m]
-    marker_1: [-1.00, 0.75, -0.9] # [m]
-    marker_2: [0.75, 0.89, 0.92] # [m]
-    marker_3: [0.75, 0.89, 0.92] # [m]
-    marker_4: [0.75, 0.89, 0.92] # [m]
-    marker_5: [0.75, 0.89, 0.92] # [m]
 bag_def:
-  num_markers: 6
-  marker_0: [1.1, 2.2, 3.3] # [m]
-  marker_1: [1.1, 2.2, 3.3] # [m]
-  marker_2: [1.1, 2.2, 3.3] # [m]
-  marker_3: [1.1, 2.2, 3.3] # [m]
-  marker_4: [1.1, 2.2, 3.3] # [m]
-  marker_5: [1.1, 2.2, 3.3] # [m]
+  marker_0: [0, 0, -0.4318]
+  marker_1: [-0.1246, 0.3143, -0.4318]
+  marker_2: [0.0735, 0.3366, -0.4318]
+  marker_3: [0.0708, -0.2588, -0.4318]
+  marker_4: [-0.1139, -0.2604, -0.4318]
+  marker_5: [1.1, 2.2, 3.3]
+  num_markers: 5
+calibrator:
+  dropoff:
+    marker_0: [1.0, 0.75, -0.9]
+    marker_1: [-1.0, 0.75, -0.9]
+    marker_2: [0.75, 0.89, 0.92]
+    marker_3: [0.75, 0.89, 0.92]
+    marker_4: [0.75, 0.89, 0.92]
+    marker_5: [0.75, 0.89, 0.92]
+    num_markers: 3
+  pickup:
+    marker_0: [0, 0, -0.4318]
+    marker_1: [-0.1246, 0.3143, -0.4318]
+    marker_2: [0.0735, 0.3366, -0.4318]
+    marker_3: [0.0708, -0.2588, -0.4318]
+    marker_4: [-0.1139, -0.2604, -0.4318]
+    marker_5: [0.75, 0.89, 0.92]
+    num_markers: 5
+multiple_bags: false
+pack_file_path: ~/catkin_ws/src/
+plot: {calibration: true, estimation: false}
+run_calibration: {dropoff: false, pickup: false}
+run_estimation: true
 sensor_0:
-  position: [0.4142, 0.8, 0.4052] # [m]
-  point: [0, 0, -0.4318] # [m]
+  point: [0, 0, -0.4318]
+  position: [0.4142, 0.8, 0.4052]
 sensor_1:
-  position: [0.4142, -1.1214, 0.4052] # [m]
-  point: [0, 0, -0.4318] # [m]
+  point: [0, 0, -0.4318]
+  position: [0.4142, -1.1214, 0.4052]
 sensor_2:
-  position: [0.75, 0.7242, 0.9479] # [m]
-  point: [0, 0, -0.4318] # [m]
+  point: [0, 0, -0.4318]
+  position: [0.75, 0.7242, 0.9479]
 sensor_3:
-  position: [0.75, -0.7242, 1.25] # [m]
-  point: [0, 0, -0.4318] # [m]
+  point: [0, 0, -0.4318]
+  position: [0.75, -0.7242, 1.25]
 sensor_4:
-  position: [1.0, 0, 1.1934] # [m]
-  point: [0, 0, -0.4318] # [m]
+  point: [0, 0, -0.4318]
+  position: [1.0, 0, 1.1934]
 sensor_5:
-  position: [1.772, 1.0353, 0.5978] # [m]
-  point: [2.2720, 0.8453, -0.8453] # [m]
+  point: [2.272, 0.8453, -0.8453]
+  position: [1.772, 1.0353, 0.5978]
 sensor_6:
-  position: [2.772, 1.0353, 0.5978] # [m]
-  point: [2.2720, 0.8453, -0.8453] # [m]
+  point: [2.272, 0.8453, -0.8453]
+  position: [2.772, 1.0353, 0.5978]
 sensor_7:
-  position: [1.272, 0, 1.1955] # [m]
-  point: [2.2720, 0.8453, -0.8453] # [m]
+  point: [2.272, 0.8453, -0.8453]
+  position: [1.272, 0, 1.1955]
 sensor_8:
-  position: [3.272, 0, 1.1955] # [m]
-  point: [2.2720, 0.8453, -0.8453] # [m]
+  point: [2.272, 0.8453, -0.8453]
+  position: [3.272, 0, 1.1955]
 sensor_9:
-  position: [2.272, -1.0353, 0.5978] # [m]
-  point: [2.2720, 0.8453, -0.8453] # [m]
-...
+  point: [2.272, 0.8453, -0.8453]
+  position: [2.272, -1.0353, 0.5978]
+software_mode: Flight
+thresholds: {covariance: 0.001, time: 5}
+update_params: false
+verbose: true
