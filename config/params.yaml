@@ -24,7 +24,7 @@ calibrator:
     marker_5: [0.75, 0.89, 0.92]
     num_markers: 5
 multiple_bags: false
-pack_file_path: ~/catkin_ws/src/
+pack_file_path: ~/ws_moveit/src/
 plot: {calibration: true, estimation: false}
 run_calibration: {dropoff: false, pickup: false}
 run_estimation: true

@@ -318,7 +318,7 @@ int main(int argc, char **argv){
 							geometry_msgs::Pose temp_pose;
 							drop_off_locs.getLocation(label, temp_pose);
 							env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
-							env_sub_container.pose_array_copy.domain_labels.push_back(label);
+							//env_sub_container.pose_array_copy.domain_labels.push_back(label);
 							env_sub_container.mapSize(label);
 							domain_goal.push_back(label);
 							std::cout<<"pushing back to goal domain: "<<label<<std::endl;
@@ -348,7 +348,7 @@ int main(int argc, char **argv){
 					geometry_msgs::Pose temp_pose;
 					drop_off_locs.getUnoccupiedLocation(temp_pose, label);
 					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
-					env_sub_container.pose_array_copy.domain_labels.push_back(label);
+					//env_sub_container.pose_array_copy.domain_labels.push_back(label);
 					env_sub_container.mapSize(label);
 					domain_goal.push_back(label);
 					std::cout<<"pushing back to goal domain: "<<label<<std::endl;
@@ -370,13 +370,13 @@ int main(int argc, char **argv){
 					temp_pose.orientation.z = 0;
 					temp_pose.orientation.w = 1;
 					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
-					env_sub_container.pose_array_copy.domain_labels.push_back("safep");
+					//env_sub_container.pose_array_copy.domain_labels.push_back("safep");
 					env_sub_container.mapSize("safep");
 					domain_pickup.push_back("safep");
 					var_labels_1.push_back("safep");
 					domain_safe.push_back("safep");
 					env_sub_container.pose_array_copy.pose_array.poses.push_back(temp_pose);
-					env_sub_container.pose_array_copy.domain_labels.push_back("safed");
+					//env_sub_container.pose_array_copy.domain_labels.push_back("safed");
 					env_sub_container.mapSize("safed");
 					domain_dropoff.push_back("safed");
 					var_labels_1.push_back("safed");
@@ -663,92 +663,6 @@ int main(int argc, char **argv){
 				}
 				std::cout<<"\n";
 
-				/* EXECUTE PLAN */
-				/*
-				bool succeeded = true;
-				for (int i=0; i<action_sequence.size(); ++i) {
-					// Trigger for starting a planning query
-					plan_query_msg.action = "begin";
-					if (i == 0) {
-						// First query should send the environment, there
-						// is no need to keep updating the env after the 
-						// first query
-						plan_query_msg.setup_environment = true;
-						plan_query_msg.bag_poses.poses.resize(env_sub_container.num_bags);
-						plan_query_msg.bag_labels = obj_loc_group;
-						for (int i=0; i<env_sub_container.num_bags; ++i)  {
-							plan_query_msg.bag_poses.poses[i].position.x = env_sub_container.pose_array_copy.pose_array.poses[i].position.x;
-							plan_query_msg.bag_poses.poses[i].position.y = env_sub_container.pose_array_copy.pose_array.poses[i].position.y;
-							plan_query_msg.bag_poses.poses[i].position.z = env_sub_container.pose_array_copy.pose_array.poses[i].position.z;
-							plan_query_msg.bag_poses.poses[i].orientation.x = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.x;
-							plan_query_msg.bag_poses.poses[i].orientation.y = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.y;
-							plan_query_msg.bag_poses.poses[i].orientation.z = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.z;
-							plan_query_msg.bag_poses.poses[i].orientation.w = env_sub_container.pose_array_copy.pose_array.poses[i].orientation.w;
-						}
-					} else {
-						plan_query_msg.setup_environment = false;
-					}
-					if (action_sequence[i] == "move") {
-						plan_query_msg.pickup_object = "none";
-						plan_query_msg.drop_object = "none";
-						int pose_ind = env_sub_container.label_ind_map[state_sequence[i+1]->getVar("eeLoc")];
-						plan_query_msg.manipulator_pose.pose.position.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.x;
-						plan_query_msg.manipulator_pose.pose.position.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.y;
-						plan_query_msg.manipulator_pose.pose.position.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].position.z + .3;
-						plan_query_msg.manipulator_pose.pose.orientation.x = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.x;
-						plan_query_msg.manipulator_pose.pose.orientation.y = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.y;
-						plan_query_msg.manipulator_pose.pose.orientation.z = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.z;
-						plan_query_msg.manipulator_pose.pose.orientation.w = env_sub_container.pose_array_copy.pose_array.poses[pose_ind].orientation.w;
-
-					} else if (action_sequence[i] == "release") {
-						plan_query_msg.pickup_object = "none";
-						std::string arg_dim_label;
-						// Look up the pre state for the action (ind i)
-						// to find which dimension has variable "ee"
-						bool found = state_sequence[i]->argFindGroup("ee", "object locations", arg_dim_label);
-						if (found) {
-							plan_query_msg.drop_object = arg_dim_label;
-						} else {
-							ROS_ERROR_NAMED("task_planner_node", "state sequence does not match action sequence");
-						}
-
-					} else if (action_sequence[i] == "grasp") {
-						plan_query_msg.drop_object = "none";
-						std::string arg_dim_label;
-						// Look up the post state for the action (ind i+1)
-						// to find which dimension has variable "ee"
-						bool found = state_sequence[i+1]->argFindGroup("ee", "object locations", arg_dim_label);
-						if (found) {
-							plan_query_msg.pickup_object = arg_dim_label;
-						} else {
-							ROS_ERROR_NAMED("task_planner_node", "state sequence does not match action sequence");
-						}
-
-					} else if (action_sequence[i] == "translate") {
-						plan_query_msg.pickup_object = "none";
-						plan_query_msg.drop_object = "none";
-					}
-					plan_query_pub.publish(plan_query_msg);
-					ros::spinOnce();
-					ros::Rate r_PQ(1);
-					std::cout<<"first action_PQ: "<<action_PQ<<std::endl;
-					r_PQ.sleep(); // Give the manipulator node time to see begin
-					ros::WallDuration(3.0);
-					while (ros::ok() && action_PQ == "working") {
-						ros::spinOnce();
-						std::cout<<"action_PQ: "<<action_PQ<<std::endl;
-						r_PQ.sleep();	
-					}
-					plan_query_msg.action = "idle";
-					plan_query_pub.publish(plan_query_msg);
-					ros::spinOnce();
-					if (success_PQ != "success") {
-						ROS_WARN_NAMED("task_planner_node", "Plan & execute failed");
-						break;
-					}
-				}
-				*/
-
 				SimpleCondition safe_cond;
 				safe_cond.addCondition(Condition::SIMPLE, Condition::LABEL, "eeLoc", Condition::IN_DOMAIN, Condition::DOMAIN, "safe domain");
 				safe_cond.setCondJunctType(Condition::SIMPLE, Condition::CONJUNCTION);
@@ -756,6 +670,15 @@ int main(int argc, char **argv){
 					std::cout<<" printing safe domain: "<<domain_safe[i]<<std::endl;
 				}
 
+				SimpleCondition pickup_env_cond;
+				pickup_env_cond.addCondition(Condition::SIMPLE, Condition::LABEL, "eeLoc", Condition::IN_DOMAIN, Condition::DOMAIN, "pickup domain");
+				pickup_env_cond.setCondJunctType(Condition::SIMPLE, Condition::CONJUNCTION);
+
+				SimpleCondition dropoff_env_cond;
+				dropoff_env_cond.addCondition(Condition::SIMPLE, Condition::LABEL, "eeLoc", Condition::IN_DOMAIN, Condition::DOMAIN, "dropoff domain");
+				dropoff_env_cond.setCondJunctType(Condition::SIMPLE, Condition::CONJUNCTION);
+
+				/* EXECUTE */
 				bool succeeded = true;
 				for (int i=0; i<action_sequence.size(); ++i) {
 					if (i == 0) {
@@ -765,7 +688,19 @@ int main(int argc, char **argv){
 						plan_query_srv_msg.request.setup_environment = true;
 						plan_query_srv_msg.request.bag_poses.poses.resize(env_sub_container.num_bags);
 						plan_query_srv_msg.request.bag_labels = obj_loc_group;
+						// Set the initial bag domain labels to only load a 
+						// certain environment
+						plan_query_srv_msg.request.bag_domain_labels.resize(env_sub_container.num_bags);
 						for (int i=0; i<env_sub_container.num_bags; ++i)  {
+							// Bag domain labels are given in location domains
+							// however, the manipulator node uses the umbrella
+							// domains. Convert these here:
+							if (env_sub_container.pose_array_copy.domain_labels[i] == "pickup location domain"){
+								plan_query_srv_msg.request.bag_domain_labels[i] = "pickup domain";
+							} if (env_sub_container.pose_array_copy.domain_labels[i] == "dropoff location domain"){
+								plan_query_srv_msg.request.bag_domain_labels[i] = "dropoff domain";
+							}
+							std::cout<<"PRINTING DOMAIN LABEL FOR bag: "<<i<<" : "<<plan_query_srv_msg.request.bag_domain_labels[i]<<std::endl;
 							plan_query_srv_msg.request.bag_poses.poses[i].position.x = env_sub_container.pose_array_copy.pose_array.poses[i].position.x;
 							plan_query_srv_msg.request.bag_poses.poses[i].position.y = env_sub_container.pose_array_copy.pose_array.poses[i].position.y;
 							plan_query_srv_msg.request.bag_poses.poses[i].position.z = env_sub_container.pose_array_copy.pose_array.poses[i].position.z;
@@ -785,6 +720,15 @@ int main(int argc, char **argv){
 						state_sequence[i+1]->print();
 						bool is_safe_loc = safe_cond.evaluate(state_sequence[i+1]);
 						std::cout<<" SAFE LOCATION?: "<<is_safe_loc<<std::endl;
+						bool is_pickup = pickup_env_cond.evaluate(state_sequence[i+1]);
+						bool is_dropoff = dropoff_env_cond.evaluate(state_sequence[i+1]);
+						if (is_pickup) {
+							plan_query_srv_msg.request.planning_domain = "pickup domain";	
+						} else if (is_dropoff) {
+							plan_query_srv_msg.request.planning_domain = "dropoff domain";	
+						} else {
+							ROS_ERROR_NAMED("task_planner_node","Next state was not found in pickup domain or dropoff domain. Environment cannot be set");	
+						}
 						if (is_safe_loc){
 							plan_query_srv_msg.request.safe_config = true;
 						} else {

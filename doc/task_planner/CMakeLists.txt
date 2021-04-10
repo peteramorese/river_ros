@@ -16,5 +16,5 @@ target_link_libraries(task_planner_node
 
 #target_link_libraries(eef_srv_test_node ${catkin_LIBRARIES})
 
-install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 

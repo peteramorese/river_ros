@@ -2,8 +2,10 @@ geometry_msgs/Pose manipulator_pose
 geometry_msgs/PoseArray bag_poses
 bool setup_environment
 string[] bag_labels
+string[] bag_domain_labels
 string pickup_object
 string drop_object
+string planning_domain
 bool safe_config
 ---
 bool success

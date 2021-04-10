@@ -7,5 +7,5 @@ add_executable(test_manipulator_node src/test_manipulator_node.cpp)
 target_link_libraries(manipulator_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 target_link_libraries(test_manipulator_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 

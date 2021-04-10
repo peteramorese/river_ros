@@ -93,7 +93,7 @@ add_service_files(
 #   Action2.action
 # )
 
-catkin_python_setup()
+#catkin_python_setup()
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
@@ -191,7 +191,7 @@ include_directories(
 
 ## Specify libraries to link a library or executable target against
 add_subdirectory(doc/manipulator)
-add_subdirectory(doc/arduino)
+##add_subdirectory(doc/arduino)
 add_subdirectory(doc/bag_config)
 add_subdirectory(doc/task_planner)
 add_subdirectory(doc/status)
@@ -201,7 +201,8 @@ add_subdirectory(doc/status)
 add_dependencies(manipulator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(task_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(bag_config_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(bag_config_talker ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(bag_config_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+##add_dependencies(bag_config_talker ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #add_dependencies(arduino_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #############
 ## Install ##

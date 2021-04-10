@@ -1,2 +1,0 @@
-
--G Unix Makefiles -DCATKIN_DEVEL_PREFIX=/home/x-wing/catkin_ws/src/river_ros/doc/arduino/devel_isolated -DCMAKE_INSTALL_PREFIX=/home/x-wing/catkin_ws/src/river_ros/doc/arduino/install_isolated

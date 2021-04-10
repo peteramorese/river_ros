@@ -15,18 +15,18 @@ add_executable(bag_config_test_node src/bag_config_test_node.cpp)
 
 target_link_libraries(bag_config_test_node ${catkin_LIBRARIES})
 
-install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
-set(TALKER_SOURCES
-	src/talker.cpp
-	)
+#set(TALKER_SOURCES
+#	src/talker.cpp
+#	)
 
 add_executable(bag_config_node
 	src/main.cpp
 	)
-add_executable(bag_config_talker
-	${TALKER_SOURCES}
-	)
+#add_executable(bag_config_talker
+#${TALKER_SOURCES}
+#	)
 
 add_subdirectory(include)
 link_directories(bag_config_node PUBLIC include)
@@ -38,6 +38,6 @@ target_link_libraries(bag_config_node
 	${catkin_LIBRARIES}
 	)
 
-target_link_libraries(bag_config_talker
-	${catkin_LIBRARIES}
-	)
+#target_link_libraries(bag_config_talker
+#	${catkin_LIBRARIES}
+#	)

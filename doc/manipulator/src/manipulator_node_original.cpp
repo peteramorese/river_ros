@@ -28,6 +28,8 @@ class PlanningQuerySrv {
 	private:
 		moveit::planning_interface::MoveGroupInterface* move_group_ptr;
 		moveit::planning_interface::PlanningSceneInterface* planning_scene_interface_ptr;
+		std::vector<moveit_msgs::CollisionObject> col_obj_vec;
+		std::vector<std::string> obs_domain_labels;
 	public:
 		PlanningQuerySrv(moveit::planning_interface::MoveGroupInterface* move_group_ptr_, moveit::planning_interface::PlanningSceneInterface* psi_ptr_, int N_TRIALS_) : 
 			move_group_ptr(move_group_ptr_),
@@ -38,57 +40,113 @@ class PlanningQuerySrv {
 		const double bag_w = .2286;
 		const double bag_h = .2413;
 		const int N_TRIALS;
+		void setWorkspace(std::vector<moveit_msgs::CollisionObject> col_obj_vec_ws, std::vector<std::string> col_obj_vec_dom_lbls) {
+			col_obj_vec.clear();		
+			obs_domain_labels.clear();
+			col_obj_vec = col_obj_vec_ws;
+			obs_domain_labels = col_obj_vec_dom_lbls;
+		}
+		void setupEnvironment(std::string planning_domain_lbl) {
+			std::cout<<"recieved planning domain label in setupEnvironment: "<<planning_domain_lbl<<std::endl;
+			std::cout<<"obs_domain_labels size: "<<obs_domain_labels.size()<<std::endl;
+			std::vector<moveit_msgs::CollisionObject> temp_col_vec;
+			for (int i=0; i<col_obj_vec.size(); ++i) {
+				if (obs_domain_labels[i] == "none") {
+					ROS_INFO_NAMED("manipulator_node", "Environment Setup: Ignoring object with label: %s", col_obj_vec[i].id.c_str());
+				} else if (obs_domain_labels[i] == planning_domain_lbl) {
+					std::cout<<"adding:"<< col_obj_vec[i].id<<std::endl;
+					col_obj_vec[i].operation = col_obj_vec[i].ADD;
+					temp_col_vec.push_back(col_obj_vec[i]);
+				} else {
+					std::cout<<"removing:"<< col_obj_vec[i].id<<std::endl;
+					col_obj_vec[i].operation = col_obj_vec[i].REMOVE;
+					temp_col_vec.push_back(col_obj_vec[i]);
+					std::cout<<"made it out of removing!"<<std::endl;
+				}
+			}
+			std::cout<<"made it out of loop"<<std::endl;
+			planning_scene_interface_ptr->applyCollisionObjects(temp_col_vec);
+			//planning_scene_interface_ptr->addCollisionObjects(col_obj_vec);
+
+		}
+		void findObjAndUpdate(std::string obj_id, std::string domain_label_) {
+			bool not_found = true;
+			for (int i=0; i<col_obj_vec.size(); ++i) {
+				if (col_obj_vec[i].id == obj_id) {
+					std::cout<<"FIND UPDATE: found object id: "<<obj_id<<std::endl;
+					std::cout<<"FIND UPDATE: updating to domain label: "<<domain_label_<<std::endl;
+					obs_domain_labels[i] = domain_label_;	
+					not_found = false;
+				}	
+			}
+			if (not_found) {
+				ROS_ERROR_NAMED("manipulator_node","Object id was not found. Cannot update domain label");
+			}
+		}
 		bool planQuery_serviceCB(river_ros::PlanningQuery_srv::Request &request, river_ros::PlanningQuery_srv::Response &response) {
 			std::cout<<"\n";
 			std::cout<<"HELLO"<<std::endl;
+			std::cout<<"Recieved planning domain: "<<request.planning_domain<<std::endl;
 			std::cout<<"\n";
 			ROS_INFO_NAMED("manipulator_node", "Recieved Planning Query");
 
 			if (request.setup_environment) {
-				std::vector<moveit_msgs::CollisionObject> col_obj_vec;
-				col_obj_vec.resize(request.bag_poses.poses.size());
+				//col_obj_vec.resize(request.bag_poses.poses.size());
+				//bag_domain_labels = request.bag_domain_labels;
 
 				for (int i=0; i<request.bag_poses.poses.size(); ++i) {
-					col_obj_vec[i].header.frame_id = "base_link";
-					col_obj_vec[i].id = request.bag_labels[i];
-					col_obj_vec[i].primitives.resize(1);
-					col_obj_vec[i].primitives[0].type = col_obj_vec[i].primitives[0].BOX;
-					col_obj_vec[i].primitives[0].dimensions.resize(3);
-					col_obj_vec[i].primitives[0].dimensions[0] = bag_l;
-					col_obj_vec[i].primitives[0].dimensions[1] = bag_w;
-					col_obj_vec[i].primitives[0].dimensions[2] = bag_h;
+					moveit_msgs::CollisionObject temp_col_obj;
+					temp_col_obj.header.frame_id = "world";
+					temp_col_obj.id = request.bag_labels[i];
+					temp_col_obj.primitives.resize(1);
+					temp_col_obj.primitives[0].type = col_obj_vec[i].primitives[0].BOX;
+					temp_col_obj.primitives[0].dimensions.resize(3);
+					temp_col_obj.primitives[0].dimensions[0] = bag_l;
+					temp_col_obj.primitives[0].dimensions[1] = bag_w;
+					temp_col_obj.primitives[0].dimensions[2] = bag_h;
 
-					col_obj_vec[i].primitive_poses.resize(1);
+					temp_col_obj.primitive_poses.resize(1);
 					std::cout<<" i see : "<<request.bag_poses.poses[i].position.x<<std::endl;
 					std::cout<<" i see : "<<request.bag_poses.poses[i].position.y<<std::endl;
 					std::cout<<" i see : "<<request.bag_poses.poses[i].position.z<<std::endl;
-					col_obj_vec[i].primitive_poses[0].position.x = request.bag_poses.poses[i].position.x;
-					col_obj_vec[i].primitive_poses[0].position.y = request.bag_poses.poses[i].position.y;
-					col_obj_vec[i].primitive_poses[0].position.z = request.bag_poses.poses[i].position.z;
-					col_obj_vec[i].primitive_poses[0].orientation.x = request.bag_poses.poses[i].orientation.x;
-					col_obj_vec[i].primitive_poses[0].orientation.y = request.bag_poses.poses[i].orientation.y;
-					col_obj_vec[i].primitive_poses[0].orientation.z = request.bag_poses.poses[i].orientation.z;
-					col_obj_vec[i].primitive_poses[0].orientation.w = request.bag_poses.poses[i].orientation.w;
-					col_obj_vec[i].operation = col_obj_vec[i].ADD;
+					temp_col_obj.primitive_poses[0].position.x = request.bag_poses.poses[i].position.x;
+					temp_col_obj.primitive_poses[0].position.y = request.bag_poses.poses[i].position.y;
+					temp_col_obj.primitive_poses[0].position.z = request.bag_poses.poses[i].position.z;
+					temp_col_obj.primitive_poses[0].orientation.x = request.bag_poses.poses[i].orientation.x;
+					temp_col_obj.primitive_poses[0].orientation.y = request.bag_poses.poses[i].orientation.y;
+					temp_col_obj.primitive_poses[0].orientation.z = request.bag_poses.poses[i].orientation.z;
+					temp_col_obj.primitive_poses[0].orientation.w = request.bag_poses.poses[i].orientation.w;
+					col_obj_vec.push_back(temp_col_obj);
+					obs_domain_labels.push_back(request.bag_domain_labels[i]);
+					std::cout<<"Adding object: "<<temp_col_obj.id<<" to domain: "<<request.bag_domain_labels[i]<<std::endl;
+					//col_obj_vec[i].operation = col_obj_vec[i].ADD;
 				}
-				planning_scene_interface_ptr->applyCollisionObjects(col_obj_vec);
-				planning_scene_interface_ptr->addCollisionObjects(col_obj_vec);
+				//planning_scene_interface_ptr->applyCollisionObjects(col_obj_vec);
+				//planning_scene_interface_ptr->addCollisionObjects(col_obj_vec);
 				std::cout<<"done setting up env"<<std::endl;
+				setupEnvironment(request.planning_domain);
 			}
 
 			if (request.pickup_object != "none") {
 				std::cout<<"attaching obj"<<std::endl;
 				std::string obj_label = request.pickup_object;
 				move_group_ptr->attachObject(obj_label,"ee_link");
+				// Change the domain of the attached object to be 'none' 
+				// so that it does not get removed
+				findObjAndUpdate(obj_label, "none");
 				response.success = true;
-				std::cout<<"done attaching obj"<<std::endl;
+				ROS_INFO_NAMED("manipulator_node","Done attaching object");
 			} else if (request.drop_object != "none") {
 				std::cout<<"done droppin obj"<<std::endl;
 				std::string obj_label = request.drop_object;
 				move_group_ptr->detachObject(obj_label);
+				// If we are releasing an object, the new domain becomes
+				// whatever domain the end effector is in (the request)
+				findObjAndUpdate(obj_label, request.planning_domain);
 				response.success = true;
-				std::cout<<"done dropping obj"<<std::endl;
+				ROS_INFO_NAMED("manipulator_node","Done detaching object");
 			} else {
+				setupEnvironment(request.planning_domain);
 				std::cout<<"moving"<<std::endl;
 				geometry_msgs::Pose pose;
 				moveit::planning_interface::MoveGroupInterface::Plan plan;
@@ -204,58 +262,168 @@ int main(int argc, char **argv) {
 
 	ROS_INFO_NAMED("manipulator_node", "Reference frame: %s", move_group.getPlanningFrame().c_str());
 
-	int Nobj=2;
+	//int Nobj=2;
 	//int Nobj=1;
 	std::vector<moveit_msgs::CollisionObject> colObjVec;
-	colObjVec.resize(Nobj);
-
+	std::vector<std::string> colObjVec_domain_lbls;
+	//colObjVec.resize(Nobj);
+	//colObjVec_domain_lbls.resize(Nobj);
+	int ind = 0;
 	/*
 	   for (int i=0; i<Nobj; i++) {
 	   colObjVec[i].header.frame_id = "base_link";
 	   }
 	   */
 
-	colObjVec[0].header.frame_id = "base_link";
-	colObjVec[1].header.frame_id = "ee_link";
 
 	/* Define Table, Collision Environment, End Effector */ 
-	// Table:
-	colObjVec[0].id = "table";
-	colObjVec[0].primitives.resize(1);
-	colObjVec[0].primitives[0].type = colObjVec[0].primitives[0].BOX;
-	colObjVec[0].primitives[0].dimensions.resize(3);
-	colObjVec[0].primitives[0].dimensions[0] = 3;
-	colObjVec[0].primitives[0].dimensions[1] = 3;
-	colObjVec[0].primitives[0].dimensions[2] = 1;
+	// ground:
+	moveit_msgs::CollisionObject ground;
+	ground.header.frame_id = "world";
+	ground.id = "ground";
+	ground.primitives.resize(1);
+	ground.primitives[0].type = colObjVec[0].primitives[0].BOX;
+	ground.primitives[0].dimensions.resize(3);
+	ground.primitives[0].dimensions[0] = 2;
+	ground.primitives[0].dimensions[1] = 2.4;
+	ground.primitives[0].dimensions[2] = .1;
 
-	colObjVec[0].primitive_poses.resize(1);
-	colObjVec[0].primitive_poses[0].position.x = 0;
-	colObjVec[0].primitive_poses[0].position.y = 0;
-	colObjVec[0].primitive_poses[0].position.z = -.55; // should be -.5
-	colObjVec[0].primitive_poses[0].orientation.x = 0;
-	colObjVec[0].primitive_poses[0].orientation.y = 0;
-	colObjVec[0].primitive_poses[0].orientation.z = 0;
-	colObjVec[0].primitive_poses[0].orientation.w = 1;
-	colObjVec[0].operation = colObjVec[0].ADD;
+	ground.primitive_poses.resize(1);
+	ground.primitive_poses[0].position.x = 0;
+	ground.primitive_poses[0].position.y = 0;
+	ground.primitive_poses[0].position.z = -.05; // should be -.5
+	ground.primitive_poses[0].orientation.x = 0;
+	ground.primitive_poses[0].orientation.y = 0;
+	ground.primitive_poses[0].orientation.z = 0;
+	ground.primitive_poses[0].orientation.w = 1;
+	ground.operation = ground.ADD;
+	colObjVec.push_back(ground);
+	colObjVec_domain_lbls.push_back("pickup domain");
+	colObjVec.push_back(ground);
+	colObjVec_domain_lbls.push_back("dropoff domain");
+
+	// ceiling:
+	moveit_msgs::CollisionObject ceiling;
+	ceiling.header.frame_id = "world";
+	ceiling.id = "ceiling";
+	ceiling.primitives.resize(1);
+	ceiling.primitives[0].type = colObjVec[0].primitives[0].BOX;
+	ceiling.primitives[0].dimensions.resize(3);
+	ceiling.primitives[0].dimensions[0] = 2;
+	ceiling.primitives[0].dimensions[1] = 2.4;
+	ceiling.primitives[0].dimensions[2] = .1;
+
+	ceiling.primitive_poses.resize(1);
+	ceiling.primitive_poses[0].position.x = 0;
+	ceiling.primitive_poses[0].position.y = 0;
+	ceiling.primitive_poses[0].position.z = 1.8+.1/2; // should be -.5
+	ceiling.primitive_poses[0].orientation.x = 0;
+	ceiling.primitive_poses[0].orientation.y = 0;
+	ceiling.primitive_poses[0].orientation.z = 0;
+	ceiling.primitive_poses[0].orientation.w = 1;
+	ceiling.operation = ceiling.ADD;
+	colObjVec.push_back(ceiling);
+	colObjVec_domain_lbls.push_back("pickup domain");
+	colObjVec.push_back(ceiling);
+	colObjVec_domain_lbls.push_back("dropoff domain");
+
+
+	// table:
+	moveit_msgs::CollisionObject table;
+	table.header.frame_id = "world";
+	table.id = "table";
+	table.primitives.resize(1);
+	table.primitives[0].type = colObjVec[0].primitives[0].BOX;
+	table.primitives[0].dimensions.resize(3);
+	table.primitives[0].dimensions[0] = .5;
+	table.primitives[0].dimensions[1] = 1.1;
+	table.primitives[0].dimensions[2] = .56;
+
+	table.primitive_poses.resize(1);
+	table.primitive_poses[0].position.x = -.34-.5/2; //.34
+	table.primitive_poses[0].position.y = 0;
+	table.primitive_poses[0].position.z = .56/2; // should be -.5
+	table.primitive_poses[0].orientation.x = 0;
+	table.primitive_poses[0].orientation.y = 0;
+	table.primitive_poses[0].orientation.z = 0;
+	table.primitive_poses[0].orientation.w = 1;
+	table.operation = table.ADD;
+	colObjVec.push_back(table);
+	colObjVec_domain_lbls.push_back("pickup domain");
+	
+	// left wall:
+	moveit_msgs::CollisionObject wall_L;
+	wall_L.header.frame_id = "world";
+	wall_L.id = "wall_L";
+	wall_L.primitives.resize(1);
+	wall_L.primitives[0].type = colObjVec[0].primitives[0].BOX;
+	wall_L.primitives[0].dimensions.resize(3);
+	wall_L.primitives[0].dimensions[0] = 2;
+	wall_L.primitives[0].dimensions[1] = .1;
+	wall_L.primitives[0].dimensions[2] = 1.8;
+
+	wall_L.primitive_poses.resize(1);
+	wall_L.primitive_poses[0].position.x = 0; //.34
+	wall_L.primitive_poses[0].position.y = -1.15;
+	wall_L.primitive_poses[0].position.z = .9; // should be -.5
+	wall_L.primitive_poses[0].orientation.x = 0;
+	wall_L.primitive_poses[0].orientation.y = 0;
+	wall_L.primitive_poses[0].orientation.z = 0;
+	wall_L.primitive_poses[0].orientation.w = 1;
+	wall_L.operation = wall_L.ADD;
+	colObjVec.push_back(wall_L);
+	colObjVec_domain_lbls.push_back("pickup domain");
+	colObjVec.push_back(wall_L);
+	colObjVec_domain_lbls.push_back("dropoff domain");
+
+	// right wall:
+	moveit_msgs::CollisionObject wall_R;
+	wall_R.header.frame_id = "world";
+	wall_R.id = "wall_R";
+	wall_R.primitives.resize(1);
+	wall_R.primitives[0].type = colObjVec[0].primitives[0].BOX;
+	wall_R.primitives[0].dimensions.resize(3);
+	wall_R.primitives[0].dimensions[0] = 2;
+	wall_R.primitives[0].dimensions[1] = .1;
+	wall_R.primitives[0].dimensions[2] = 1.8;
+
+	wall_R.primitive_poses.resize(1);
+	wall_R.primitive_poses[0].position.x = 0; //.34
+	wall_R.primitive_poses[0].position.y = 1.15;
+	wall_R.primitive_poses[0].position.z = .9; // should be -.5
+	wall_R.primitive_poses[0].orientation.x = 0;
+	wall_R.primitive_poses[0].orientation.y = 0;
+	wall_R.primitive_poses[0].orientation.z = 0;
+	wall_R.primitive_poses[0].orientation.w = 1;
+	wall_R.operation = wall_R.ADD;
+	colObjVec.push_back(wall_R);
+	colObjVec_domain_lbls.push_back("pickup domain");
+	colObjVec.push_back(wall_R);
+	colObjVec_domain_lbls.push_back("dropoff domain");
+
 
 	// End Effector
-	colObjVec[1].id = "eef";
-	colObjVec[1].primitives.resize(1);
-	colObjVec[1].primitives[0].type = colObjVec[1].primitives[0].BOX;
-	colObjVec[1].primitives[0].dimensions.resize(3);
-	colObjVec[1].primitives[0].dimensions[0] = .09;
-	colObjVec[1].primitives[0].dimensions[1] = .1;
-	colObjVec[1].primitives[0].dimensions[2] = .12;
+	moveit_msgs::CollisionObject eef;
+	eef.header.frame_id = "ee_link";
+	eef.id = "eef";
+	eef.primitives.resize(1);
+	eef.primitives[0].type = colObjVec[1].primitives[0].BOX;
+	eef.primitives[0].dimensions.resize(3);
+	eef.primitives[0].dimensions[0] = .09;
+	eef.primitives[0].dimensions[1] = .1;
+	eef.primitives[0].dimensions[2] = .12;
 
-	colObjVec[1].primitive_poses.resize(1);
-	colObjVec[1].primitive_poses[0].position.x =.09*.5+.01;
-	colObjVec[1].primitive_poses[0].position.y = 0;
-	colObjVec[1].primitive_poses[0].position.z = .02; 
-	colObjVec[1].primitive_poses[0].orientation.x = 0;
-	colObjVec[1].primitive_poses[0].orientation.y = 0;
-	colObjVec[1].primitive_poses[0].orientation.z = 0;
-	colObjVec[1].primitive_poses[0].orientation.w = 1;
-	colObjVec[1].operation = colObjVec[0].ADD;
+	eef.primitive_poses.resize(1);
+	eef.primitive_poses[0].position.x =.09*.5+.01;
+	eef.primitive_poses[0].position.y = 0;
+	eef.primitive_poses[0].position.z = .02; 
+	eef.primitive_poses[0].orientation.x = 0;
+	eef.primitive_poses[0].orientation.y = 0;
+	eef.primitive_poses[0].orientation.z = 0;
+	eef.primitive_poses[0].orientation.w = 1;
+	eef.operation = eef.ADD;
+	colObjVec.push_back(eef);
+	colObjVec_domain_lbls.push_back("none");
 
 	planning_scene_interface.applyCollisionObjects(colObjVec);
 	planning_scene_interface.addCollisionObjects(colObjVec);
@@ -263,6 +431,7 @@ int main(int argc, char **argv) {
 	move_group.setEndEffectorLink("ee_link");
 
 	PlanningQuerySrv plan_query_srv_container(&move_group, &planning_scene_interface, 5);
+	plan_query_srv_container.setWorkspace(colObjVec, colObjVec_domain_lbls);
 
 	ros::ServiceServer plan_query_service = M_NH.advertiseService("task_planner/planning_query", &PlanningQuerySrv::planQuery_serviceCB, &plan_query_srv_container);
 
