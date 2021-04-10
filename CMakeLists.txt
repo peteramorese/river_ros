@@ -73,6 +73,8 @@ add_message_files(
   data_pt.msg
   data_pkt.msg
   data_pkg.msg
+  sensory_info.msg
+  command.msg
 )
 
 ## Generate services in the 'srv' folder
