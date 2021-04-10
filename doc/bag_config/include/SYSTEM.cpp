@@ -358,6 +358,18 @@ void SYSTEM::calibrate_pickup()
 		cout << "Press Enter to calibrate." << endl;
 		cin.get();
 
+		param_str = "/bag_config_node/verbose";
+		bool verbose = true;
+		if(CheckParam(param_str, 1, verbose))
+		{
+			ros::param::get(param_str, verbose);
+		}
+
+		if(verbose)
+		{
+			cout << "Calibrating Pickup Sensors..." << endl;
+		}
+
 		param_str = "/bag_config_node/calibrator/pickup/num_markers";
 		if(CheckParam(param_str, 2))
 		{
@@ -415,6 +427,18 @@ void SYSTEM::calibrate_dropoff()
 	{
 		cout << "Press Enter to calibrate." << endl;
 		cin.get();
+
+		param_str = "/bag_config_node/verbose";
+		bool verbose = true;
+		if(CheckParam(param_str, 1, verbose))
+		{
+			ros::param::get(param_str, verbose);
+		}
+
+		if(verbose)
+		{
+			cout << "Calibrating Dropoff Sensors..." << endl;
+		}
 
 		param_str = "/bag_config_node/calibrator/dropoff/num_markers";
 		if(CheckParam(param_str, 2))
@@ -800,8 +824,11 @@ void SYSTEM::run_estimator(std::vector<int> s)
 		if(bag.markers[i].updated == true)
 		{
 			upd_markers++;
+			cout << "M" << i << ":\t" << bag.markers[i].position[0] << "\t" << bag.markers[i].position[1] << "\t" << bag.markers[i].position[2] << endl;
 		}
 	}
+
+	cin.get();
 
 	if(upd_markers > 2)
 	{
@@ -869,7 +896,7 @@ void SYSTEM::run_estimator_pickup()
 			upd_bag_config_msg(domain);
 		}
 
-		if(verbose)
+		if(verbose && false)
 		{
 			cout << "Center: " << bag.center[0] << "  " << bag.center[1] << "  " << bag.center[2] << endl;
 			cout << "Done estimating pickup location." << endl;
@@ -939,6 +966,8 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 	reset_bag_config_msg();
 
 	// if (we found all of the bags)
+	if(false)
+	{
 		bag_config_msg.bags_found = true;
 		bag_config_msg.observation_label = "cargo_found";
 		// else
@@ -967,29 +996,31 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 		bag_config_msg.pose_array.poses[1].orientation.w = 0;
 
 		res.observation_label = "cargo_found";
+	}
 
-	// run_estimator_pickup();
+	run_estimator_pickup();
 
-	// if(bag.updated)
-	// {
-	// 	res.observation_label = "cargo_found";
-	// }
-	// else
-	// {
-	// 	res.observation_label = "cargo_not_found";
-	// }
+	if(bag.bag_found)
+	{
+		res.observation_label = "cargo_found";
+	}
+	else
+	{
+		res.observation_label = "cargo_not_found";
+	}
 
-	// run_estimator_dropoff();
+	run_estimator_dropoff();
 
-	// if(bag.updated)
-	// {
-	// 	res.observation_label = "cargo_found";
-	// }
-	// else
-	// {
-	// 	res.observation_label = "cargo_not_found";
-	// }
-		return true;
+	if(bag.bag_found)
+	{
+		res.observation_label = "cargo_found";
+	}
+	else
+	{
+		res.observation_label = "cargo_not_found";
+	}
+
+	return true;
 }
 
 
@@ -1033,15 +1064,17 @@ void SYSTEM::upd_bag_config_msg(string domain)
 	if(bag.bag_found)
 	{
 		bag_config_msg.bags_found = true;
+		string domain_lbl;
 
 		if(domain == "pickup")
 		{
-			bag_config_msg.domain_labels[0] = "pickup location domain";
+			domain_lbl = "pickup location domain";
 		}
 		else if(domain == "dropoff")
 		{
-			bag_config_msg.domain_labels[0] = "dropoff location domain";
+			domain_lbl = "dropoff location domain";
 		}
+		bag_config_msg.domain_labels.push_back(domain_lbl);
 
 		geometry_msgs::Pose tmp_pose;
 		tmp_pose.position.x = bag.center[0];

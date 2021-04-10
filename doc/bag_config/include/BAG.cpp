@@ -188,6 +188,8 @@ void BAG::estimate_ori()
 
 std::array<double, 4> BAG::dcm_to_quat(mat Q)
 {
+	cout << "Entering Quat" << endl;
+
 	std::array<double, 4> quat;
 
 	double q1, q2, q3, q4;
@@ -235,6 +237,7 @@ std::array<double, 4> BAG::dcm_to_quat(mat Q)
 
 
 	quat = {q1, q2, q3, q4};
+	cout << "Exiting Quat" << endl;
 	return quat;
 }
 
@@ -264,8 +267,8 @@ std::vector<std::pair<double[3], int>> BAG::get_bag_pair(bool def)
 		{
 			ros::param::get(param_str, pos_vec);
 			bag_def[i].first[0] = pos_vec[0];
-			bag_def[i].first[0] = pos_vec[1];
-			bag_def[i].first[0] = pos_vec[2];
+			bag_def[i].first[1] = pos_vec[1];
+			bag_def[i].first[2] = pos_vec[2];
 			bag_def[i].second = i;
 		}
 	}
