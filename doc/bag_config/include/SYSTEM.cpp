@@ -966,7 +966,7 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 	reset_bag_config_msg();
 
 	// if (we found all of the bags)
-	if(false)
+	if(true)
 	{
 		bag_config_msg.bags_found = true;
 		bag_config_msg.observation_label = "cargo_found";
@@ -997,27 +997,30 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 
 		res.observation_label = "cargo_found";
 	}
-
-	run_estimator_pickup();
-
-	if(bag.bag_found)
-	{
-		res.observation_label = "cargo_found";
-	}
 	else
 	{
-		res.observation_label = "cargo_not_found";
-	}
 
-	run_estimator_dropoff();
+		run_estimator_pickup();
 
-	if(bag.bag_found)
-	{
-		res.observation_label = "cargo_found";
-	}
-	else
-	{
-		res.observation_label = "cargo_not_found";
+		if(bag.bag_found)
+		{
+			res.observation_label = "cargo_found";
+		}
+		else
+		{
+			res.observation_label = "cargo_not_found";
+		}
+
+		run_estimator_dropoff();
+
+		if(bag.bag_found)
+		{
+			res.observation_label = "cargo_found";
+		}
+		else
+		{
+			res.observation_label = "cargo_not_found";
+		}
 	}
 
 	return true;
