@@ -1,0 +1,4 @@
+<launch>
+  <node name="task_planner_node" pkg="river_ros" type="task_planner_node">
+  </node>
+</launch>

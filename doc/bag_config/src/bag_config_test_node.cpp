@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
 	//BagConfig observe_BC_container;
 	//ros::ServiceServer observe_srv = BC_test_NH.advertiseService("status/observe_cargo",&BagConfig::observe_srvCB, &observe_BC_container);
-	ros::Publisher observe_BC_pub = BC_test_NH.advertise<river_ros::BagConfigPoseArray_msg>("bag_config/bag_configs", 10);
+	ros::Publisher observe_BC_pub = BC_test_NH.advertise<river_ros::BagConfigPoseArray_msg>("status/observe", 10);
 	ros::Rate r(1);
 	river_ros::BagConfigPoseArray_msg bag_configs;
 	while (ros::ok()) {	

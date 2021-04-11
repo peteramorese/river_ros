@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<launch>
+  <node name="status_node" pkg="river_ros" type="status_node">
+  </node>
+</launch>

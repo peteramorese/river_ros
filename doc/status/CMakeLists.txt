@@ -14,5 +14,7 @@ target_link_libraries(status_node
 
 target_link_libraries(status_node ${catkin_LIBRARIES})
 
-#install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+install(TARGETS status_node 
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 

@@ -82,12 +82,32 @@ struct EnvironmentSub {
 	}
 };
 
-class SensoryInfoSub {
-	private:
-	public:
-		void sensoryInfoCB(const geometry_msgs::Point::ConstPtr& info) {
-			
+struct SensoryInfoSub {
+	bool grasp_switch;
+	bool eef_actuated;
+	float trans_pos;
+	geometry_msgs::Point msg;
+	SensoryInfoSub() {
+		grasp_switch = false;
+		eef_actuated = false;
+	}
+	void sensoryInfoCB(const geometry_msgs::Point::ConstPtr& info) {
+		if (info->x == 0.0f) {
+			grasp_switch = false;	
+		} else if (info->y == 1.0f) {
+			grasp_switch = true;	
+		} else {
+			ROS_ERROR_NAMED("task_planer_node","Unrecognized input from sensory_info");
 		}
+		if (info->y == 0.0f) {
+			eef_actuated = false;	
+		} else if (info->y == 1.0f) {
+			eef_actuated = true;	
+		} else {
+			ROS_ERROR_NAMED("task_planer_node","Unrecognized input from sensory_info");
+		}
+		trans_pos = info->z;
+	}
 
 };
 
@@ -231,7 +251,8 @@ int main(int argc, char **argv){
 	ros::Publisher command_TP_pub = TP_NH.advertise<geometry_msgs::Point>("task_planner/command",1);
 	geometry_msgs::Point command_TP_msg;
 
-	//ros::Subscriber sensory_info_TP_sub = TP_NH.subscribe("arduino/sensory_info", 1, 
+	SensoryInfoSub sensory_sub_container;
+	ros::Subscriber sensory_info_TP_sub = TP_NH.subscribe("arduino/sensory_info", 1, &SensoryInfoSub::sensoryInfoCB, &sensory_sub_container);
 
 	// Publish the current planning query
 	/*
@@ -757,6 +778,27 @@ int main(int argc, char **argv){
 
 
 					} else if (action_sequence[i] == "release") {
+						int N_iter = 40;
+						command_TP_msg.x = 0.0f;
+						command_TP_msg.y = 0.0f;
+						command_TP_pub.publish(command_TP_msg);
+						ros::spinOnce();
+						ros::Rate r_sensory(2);
+						for (int ii=0; ii<N_iter; ++ii) {
+							if (!ros::ok()) {
+								break;
+							}
+							if (!sensory_sub_container.grasp_switch && !sensory_sub_container.eef_actuated) {
+								break;
+							}
+							std::cout<<"Waiting on EEF to release. Trial: "<<ii<<std::endl;
+							ros::spinOnce();
+							r_sensory.sleep();	
+						}
+						if (sensory_sub_container.grasp_switch || sensory_sub_container.eef_actuated) {
+							ROS_ERROR("End effector time out");
+							break;
+						}
 						plan_query_srv_msg.request.pickup_object = "none";
 						plan_query_srv_msg.request.safe_config = false;
 						std::string arg_dim_label;
@@ -780,6 +822,27 @@ int main(int argc, char **argv){
 						}
 
 					} else if (action_sequence[i] == "grasp") {
+						int N_iter = 40;
+						command_TP_msg.x = 0.0f;
+						command_TP_msg.y = 1.0f;
+						command_TP_pub.publish(command_TP_msg);
+						ros::spinOnce();
+						ros::Rate r_sensory(2);
+						for (int ii=0; ii<N_iter; ++ii) {
+							if (!ros::ok()) {
+								break;
+							}
+							if (sensory_sub_container.grasp_switch && sensory_sub_container.eef_actuated) {
+								break;
+							}
+							std::cout<<"Waiting on EEF to grasp. Trial: "<<ii<<std::endl;
+							ros::spinOnce();
+							r_sensory.sleep();	
+						}
+						if (!sensory_sub_container.grasp_switch || !sensory_sub_container.eef_actuated) {
+							ROS_ERROR("End effector time out");
+							//break;
+						}
 						plan_query_srv_msg.request.drop_object = "none";
 						plan_query_srv_msg.request.safe_config = false;
 						std::string arg_dim_label;
@@ -808,6 +871,27 @@ int main(int argc, char **argv){
 						plan_query_srv_msg.request.pickup_object = "none";
 						plan_query_srv_msg.request.drop_object = "none";
 						// call translator service here:
+						//int N_iter = 40;
+						command_TP_msg.x = 1.0f;
+						//state_sequence[i+1]->print();
+						float trans_pos = 0.0;
+						if (state_sequence[i+1]->getVar("eeLoc") == "safep") {
+							trans_pos = 1.0;
+						} else if (state_sequence[i+1]->getVar("eeLoc") == "safed") {
+							trans_pos = 2.0;
+						}
+						command_TP_msg.z = trans_pos;
+						command_TP_pub.publish(command_TP_msg);
+						ros::spinOnce();
+						ros::Rate r_translator(1);
+						while (ros::ok() && sensory_sub_container.trans_pos != trans_pos) {
+							ros::spinOnce();
+							std::cout<<"Waiting on translator. Commanded Position: "<<trans_pos<<std::endl;
+							if (sensory_sub_container.grasp_switch && sensory_sub_container.eef_actuated) {
+								break;
+							}
+							r_translator.sleep();	
+						}
 					}
 				}
 

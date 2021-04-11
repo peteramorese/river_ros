@@ -277,6 +277,7 @@ int main(int argc, char **argv) {
 
 
 	/* Define Table, Collision Environment, End Effector */ 
+	/*
 	// ground:
 	moveit_msgs::CollisionObject ground;
 	ground.header.frame_id = "world";
@@ -401,6 +402,7 @@ int main(int argc, char **argv) {
 	colObjVec.push_back(wall_R);
 	colObjVec_domain_lbls.push_back("dropoff domain");
 
+	*/
 
 	// End Effector
 	moveit_msgs::CollisionObject eef;
