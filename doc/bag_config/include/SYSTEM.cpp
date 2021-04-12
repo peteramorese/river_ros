@@ -188,7 +188,7 @@ void SYSTEM::calibrate(std::vector<int> s)
 
 	// ros::NodeHandle cal_nh;
 
-	ros::Subscriber cal_sub = est_nh.subscribe("chatter", 1000, &SYSTEM::calibrate_callback, this);
+	ros::Subscriber cal_sub = est_nh.subscribe("arduino/data_read", 1000, &SYSTEM::calibrate_callback, this);
 
 	bool loop = true;
 
@@ -481,6 +481,8 @@ void SYSTEM::set_sensors_min(vector<int> s)
 
 	for(int i = 0; i < s.size(); i++) // For each sensor defined in the network
 	{
+		cout << "Sensor " << i << " x = " << sensors[s[i]].position[0] << "\ty = " << sensors[s[i]].position[1] << "\tz = " << sensors[s[i]].position[2] << endl;
+
 		s_min.position = sensors[s[i]].position;
 		s_min.point = sensors[s[i]].point;
 		s_min.frame = sensors[s[i]].frame;
@@ -966,7 +968,7 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 	reset_bag_config_msg();
 
 	// if (we found all of the bags)
-	if(true)
+	if(false)
 	{
 		bag_config_msg.bags_found = true;
 		bag_config_msg.observation_label = "cargo_found";

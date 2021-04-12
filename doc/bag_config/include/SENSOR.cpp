@@ -84,7 +84,7 @@ void SENSOR::init_default_sensor(int id, CORE c)
 	// Initialize the first EKF step
 	EKF e;
 	e.x_hat = position;
-	e.P = 2*eye(3, 3);
+	e.P = 0.25*eye(3, 3);
 	if(sim == true)
 	{
 		e.e_x = position - position_true;

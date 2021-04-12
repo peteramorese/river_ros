@@ -191,13 +191,13 @@ include_directories(
 
 ## Specify libraries to link a library or executable target against
 add_subdirectory(doc/manipulator)
-##add_subdirectory(doc/arduino)
+add_subdirectory(doc/arduino)
 add_subdirectory(doc/bag_config)
 add_subdirectory(doc/task_planner)
 add_subdirectory(doc/status)
 
 
-#add_dependencies(eef_srv_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(Pixy_Pack ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(manipulator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(task_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(bag_config_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

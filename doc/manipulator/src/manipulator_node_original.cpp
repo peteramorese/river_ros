@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
 
 
 	/* Define Table, Collision Environment, End Effector */ 
-	/*
+	
 	// ground:
 	moveit_msgs::CollisionObject ground;
 	ground.header.frame_id = "world";
@@ -352,6 +352,31 @@ int main(int argc, char **argv) {
 	colObjVec.push_back(table);
 	colObjVec_domain_lbls.push_back("pickup domain");
 	
+
+	// pressure regulator:
+	moveit_msgs::CollisionObject pres_reg;
+	pres_reg.header.frame_id = "world";
+	pres_reg.id = "pres_reg";
+	pres_reg.primitives.resize(1);
+	pres_reg.primitives[0].type = colObjVec[0].primitives[0].BOX;
+	pres_reg.primitives[0].dimensions.resize(3);
+	pres_reg.primitives[0].dimensions[0] = .1;
+	pres_reg.primitives[0].dimensions[1] = .3;
+	pres_reg.primitives[0].dimensions[2] = .14;
+
+	pres_reg.primitive_poses.resize(1);
+	pres_reg.primitive_poses[0].position.x = -.19-.1/2; //.34
+	pres_reg.primitive_poses[0].position.y = 0;
+	pres_reg.primitive_poses[0].position.z = .14/2; // should be -.5
+	pres_reg.primitive_poses[0].orientation.x = 0;
+	pres_reg.primitive_poses[0].orientation.y = 0;
+	pres_reg.primitive_poses[0].orientation.z = 0;
+	pres_reg.primitive_poses[0].orientation.w = 1;
+	pres_reg.operation = pres_reg.ADD;
+	colObjVec.push_back(pres_reg);
+	colObjVec_domain_lbls.push_back("pickup domain");
+
+	
 	// left wall:
 	moveit_msgs::CollisionObject wall_L;
 	wall_L.header.frame_id = "world";
@@ -402,7 +427,6 @@ int main(int argc, char **argv) {
 	colObjVec.push_back(wall_R);
 	colObjVec_domain_lbls.push_back("dropoff domain");
 
-	*/
 
 	// End Effector
 	moveit_msgs::CollisionObject eef;

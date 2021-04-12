@@ -99,6 +99,7 @@ struct SensoryInfoSub {
 		} else {
 			ROS_ERROR_NAMED("task_planer_node","Unrecognized input from sensory_info");
 		}
+		
 		if (info->y == 0.0f) {
 			eef_actuated = false;	
 		} else if (info->y == 1.0f) {
