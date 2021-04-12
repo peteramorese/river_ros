@@ -131,41 +131,46 @@ void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 	EKF e;
 	bool run_upd;
 
-	for(int i = 0; i < package->pkt.size(); i++)
+	if(package->msg_id != prev_msg_id)
 	{
-		for(int j = 0; j < package->pkt[i].pt.size(); j++)
+		for(int i = 0; i < package->pkt.size(); i++)
 		{
-			y_k.x = package->pkt[i].pt[j].x;
-			y_k.y = package->pkt[i].pt[j].y;
-			y_k.mid = package->pkt[i].pt[j].mid;
-			y_k.sid = package->pkt[i].pt[j].sid;
-
-			curr_sid = y_k.sid;
-
-			Y_k.push_back(y_k);
-		}
-
-		Y.push_back(Y_k);
-
-		e = sensors[curr_sid].ekf.back();
-		run_upd = false; // Assume the update does not need to be run
-
-		for(int j = 0; j < cnst.n; j++)
-		{
-			if(2.0*sqrt(e.P(j, j)) > stop_est_cov_thrsh)
+			for(int j = 0; j < package->pkt[i].pt.size(); j++)
 			{
-				run_upd = true;
+				y_k.x = package->pkt[i].pt[j].x;
+				y_k.y = package->pkt[i].pt[j].y;
+				y_k.mid = package->pkt[i].pt[j].mid;
+				y_k.sid = package->pkt[i].pt[j].sid;
+
+				curr_sid = y_k.sid;
+
+				Y_k.push_back(y_k);
+			}
+
+			Y.push_back(Y_k);
+
+			e = sensors[curr_sid].ekf.back();
+			run_upd = false; // Assume the update does not need to be run
+
+			for(int j = 0; j < cnst.n; j++)
+			{
+				if(2.0*sqrt(e.P(j, j)) > stop_est_cov_thrsh)
+				{
+					run_upd = true;
+				}
+			}
+			
+			if(run_upd)
+			{
+				sensors[curr_sid].calibrate_sensor(Y, bag, core, cnst);
+			}
+			else
+			{
+				sensors[curr_sid].ekf.push_back(e);
 			}
 		}
-		
-		if(run_upd)
-		{
-			sensors[curr_sid].calibrate_sensor(Y, bag, core, cnst);
-		}
-		else
-		{
-			sensors[curr_sid].ekf.push_back(e);
-		}
+
+		prev_msg_id = package->msg_id;
 	}
 }
 
@@ -650,55 +655,60 @@ void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
 	vector<vector<DATA>> Y;
 	bool run_upd;
 
-	for(int cur_mid = 0; cur_mid < bag.markers.size(); cur_mid++)
+	if(package->msg_id != prev_msg_id)
 	{
-
-		run_upd = false; // Assume the update does not need to be run
-		e = bag.markers[cur_mid].ekf.back();
-
-		for(int i_n = 0; i_n < cnst.n; i_n++)
+		for(int cur_mid = 0; cur_mid < bag.markers.size(); cur_mid++)
 		{
-			if(2.0*sqrt(e.P(i_n, i_n)) > stop_est_cov_thrsh)
-			{
-				run_upd = true;
-			}
-		}
 
-		if(run_upd)
-		{
-			for(int i = 0; i < package->pkt.size(); i++)
+			run_upd = false; // Assume the update does not need to be run
+			e = bag.markers[cur_mid].ekf.back();
+
+			for(int i_n = 0; i_n < cnst.n; i_n++)
 			{
-				for(int j = 0; j < package->pkt[i].pt.size(); j++)
+				if(2.0*sqrt(e.P(i_n, i_n)) > stop_est_cov_thrsh)
 				{
-					y_k.x = package->pkt[i].pt[j].x;
-					y_k.y = package->pkt[i].pt[j].y;
-					y_k.mid = package->pkt[i].pt[j].mid;
-					y_k.sid = package->pkt[i].pt[j].sid;
+					run_upd = true;
+				}
+			}
 
-					if(y_k.mid == cur_mid)
+			if(run_upd)
+			{
+				for(int i = 0; i < package->pkt.size(); i++)
+				{
+					for(int j = 0; j < package->pkt[i].pt.size(); j++)
 					{
-						Y_k.push_back(y_k);
+						y_k.x = package->pkt[i].pt[j].x;
+						y_k.y = package->pkt[i].pt[j].y;
+						y_k.mid = package->pkt[i].pt[j].mid;
+						y_k.sid = package->pkt[i].pt[j].sid;
+
+						if(y_k.mid == cur_mid)
+						{
+							Y_k.push_back(y_k);
+						}
 					}
 				}
-			}
 
-			if(Y_k.size() > 1)
-			{
-				string param_str = "/bag_config_node/verbose";
-				bool verbose = true;
-				if(CheckParam(param_str, 1, verbose))
+				if(Y_k.size() > 1)
 				{
-					ros::param::get(param_str, verbose);
+					string param_str = "/bag_config_node/verbose";
+					bool verbose = true;
+					if(CheckParam(param_str, 1, verbose))
+					{
+						ros::param::get(param_str, verbose);
+					}
+
+					Y.push_back(Y_k);
+					bag.markers[cur_mid].estimate_pos(Y, sensors_min, core, cnst);
+
+					Y.clear();
 				}
-
-				Y.push_back(Y_k);
-				bag.markers[cur_mid].estimate_pos(Y, sensors_min, core, cnst);
-
-				Y.clear();
 			}
+
+			Y_k.clear();
 		}
 
-		Y_k.clear();
+		prev_msg_id = package->msg_id;
 	}
 
 }
@@ -830,7 +840,7 @@ void SYSTEM::run_estimator(std::vector<int> s)
 		}
 	}
 
-	cin.get();
+	// cin.get();
 
 	if(upd_markers > 2)
 	{

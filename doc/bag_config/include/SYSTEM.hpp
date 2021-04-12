@@ -68,6 +68,7 @@ private:
 	double stop_est_cov_thrsh; // Threshold to stop estimation
 	double stop_est_time; // [s] Threshold to stop estimation
 	ros::NodeHandle est_nh;
+	int prev_msg_id = 0;
 	river_ros::BagConfigPoseArray_msg bag_config_msg;
 	// vector<vector<vector<DATA>>> Y; // Vector to store data in
 
