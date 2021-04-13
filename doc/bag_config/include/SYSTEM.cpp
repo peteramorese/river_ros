@@ -120,6 +120,7 @@ BAG SYSTEM::get_bag()
 
 void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 {
+	cout << "Calibrate Callback" << endl;
 	// cout << "\n\nNEW MESSAGE" << endl;
 
 	// cout << "Package = " << package->pkt.size() << endl;
@@ -131,7 +132,7 @@ void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 	EKF e;
 	bool run_upd;
 
-	if(package->msg_id != prev_msg_id)
+	if(package->stamp != prev_msg_time)
 	{
 		for(int i = 0; i < package->pkt.size(); i++)
 		{
@@ -170,7 +171,7 @@ void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 			}
 		}
 
-		prev_msg_id = package->msg_id;
+		prev_msg_time = package->stamp;
 	}
 }
 
@@ -655,8 +656,12 @@ void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
 	vector<vector<DATA>> Y;
 	bool run_upd;
 
-	if(package->msg_id != prev_msg_id)
+	// cout << "Package stamp" << package->stamp << "\t Previous msg time: " << prev_msg_time << endl;
+
+	if(package->stamp != prev_msg_time)
 	{
+		cout << "Package stamp " << package->stamp << "\tPrevious msg time: " << prev_msg_time << endl;
+
 		for(int cur_mid = 0; cur_mid < bag.markers.size(); cur_mid++)
 		{
 
@@ -708,7 +713,7 @@ void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
 			Y_k.clear();
 		}
 
-		prev_msg_id = package->msg_id;
+		prev_msg_time = package->stamp;
 	}
 
 }
@@ -760,12 +765,12 @@ void SYSTEM::run_estimator(std::vector<int> s)
 	// ros::NodeHandle est_nh;
 
 	// Create ros subscriber
-	ros::Subscriber est_sub = est_nh.subscribe("chatter", 1000, &SYSTEM::estimator_callback, this);
+	ros::Subscriber est_sub = est_nh.subscribe("arduino/data_read", 1000, &SYSTEM::estimator_callback, this);
 
 	bool loop = true;
 	EKF e;
 
-	// Estimate continuously until an exit condition is met
+	// Estimate continuously until an exit conditionrun_estimator is met
 	while(loop)
 	{
 		loop = false; // Assume an exit condition is met, set loop = true if not
@@ -788,6 +793,8 @@ void SYSTEM::run_estimator(std::vector<int> s)
 		current_time = std::chrono::system_clock::now();
 		time_elapsed = current_time - est_start;
 
+		// cout << "Time elapsed: " << time_elapsed.count() << endl;
+
 		// If the time elapsed is greater than the set threshold stop looping
 		if(time_elapsed.count() > stop_est_time)
 		{
@@ -796,7 +803,9 @@ void SYSTEM::run_estimator(std::vector<int> s)
 		}
 
 		ros::spinOnce();
+		// cout << "exited spin" << endl;
 	}
+	// cout << "Exited while loop" << endl;
 
 	if(time_stop)
 	{
@@ -901,6 +910,7 @@ void SYSTEM::run_estimator_pickup()
 			s.push_back(i);
 		}
 
+		cout << "913" << endl;
 		run_estimator(s);
 
 		if(!mult_bags)
@@ -973,6 +983,10 @@ void SYSTEM::run_estimator_dropoff()
 bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ros::Observe_srv::Response &res)
 {
 
+	cout << "Srv Callback" << endl;
+
+	res.observation_label = "cargo_not_found";
+
 	res.time_received = ros::Time::now();
 
 	reset_bag_config_msg();
@@ -1029,10 +1043,10 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 		{
 			res.observation_label = "cargo_found";
 		}
-		else
-		{
-			res.observation_label = "cargo_not_found";
-		}
+		// else
+		// {
+		// 	res.observation_label = "cargo_not_found";
+		// }
 	}
 
 	return true;
