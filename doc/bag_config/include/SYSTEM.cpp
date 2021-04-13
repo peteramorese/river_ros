@@ -921,7 +921,6 @@ void SYSTEM::run_estimator_pickup()
 			s.push_back(i);
 		}
 
-		cout << "913" << endl;
 		run_estimator(s);
 
 		if(!mult_bags)
@@ -1050,10 +1049,10 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 
 		// run_estimator_dropoff();
 
-		if(bag.bag_found)
-		{
-			res.observation_label = "cargo_found";
-		}
+		// if(bag.bag_found)
+		// {
+		// 	res.observation_label = "cargo_found";
+		// }
 		// else
 		// {
 		// 	res.observation_label = "cargo_not_found";
@@ -1133,6 +1132,13 @@ void SYSTEM::upd_bag_config_msg(string domain)
 void SYSTEM::send_bag_config_msg()
 {
 	ros::Publisher BagConfigPub = est_nh.advertise<river_ros::BagConfigPoseArray_msg>("bag_config/bag_configs", 10);
+
+	cout << "Bags found = " << bag_config_msg.bags_found << endl;
+
+	if(bag_config_msg.pose_array.poses.size() > 0)
+	{
+		cout << "Position: " << bag_config_msg.pose_array.poses[0].position.x << "   " << bag_config_msg.pose_array.poses[0].position.y << "   " << bag_config_msg.pose_array.poses[0].position.z << endl;
+	}
 
 	BagConfigPub.publish(bag_config_msg);
 	ros::spinOnce();
