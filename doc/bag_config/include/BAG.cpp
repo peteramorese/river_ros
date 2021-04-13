@@ -184,7 +184,7 @@ void BAG::estimate_ori()
 
 	quat = dcm_to_quat(Q);
 
-	vec Core2UR = {0, 0.421, 0.634};
+	vec Core2UR = {-0.421, 0, 0.634};
 
 	center = center + Core2UR;
 }
