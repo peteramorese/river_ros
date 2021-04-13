@@ -272,10 +272,10 @@ int main(int argc, char **argv){
 	// std::vector<std::vector<double>> drop_off_locs = {{-.4, .4, 0}, {-.4, -.4, 0}, {-.4, .4, .5}, {-.4, -.4, .5}};
 	DropOffLocations drop_off_locs(1); // Maximum radius set in ctor
 	drop_off_locs.setOrientation(0, 0, 0, 1);
-	drop_off_locs.addLocation(-.4, .4, .15, "goalL1");
-	drop_off_locs.addLocation(-.4,-.4, .15, "goalL2");
-	drop_off_locs.addLocation(-.4, .4, .5, "goalL3");
-	drop_off_locs.addLocation(-.4,-.4, .5, "goalL4");
+	drop_off_locs.addLocation(0.0, .5, .5, "goalL1");
+	//drop_off_locs.addLocation(-.4,-.4, .15, "goalL2");
+	//drop_off_locs.addLocation(-.4, .4, .5, "goalL3");
+	//drop_off_locs.addLocation(-.4,-.4, .5, "goalL4");
 
 
 	int hello = 0;
