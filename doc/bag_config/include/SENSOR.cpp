@@ -187,6 +187,7 @@ EKF SENSOR::ekf_update(EKF e, BAG bag, std::vector<DATA> y_k, CORE core, CONSTAN
 	{
 		if(isnan(y_k[i].x) == 0)
 		{
+			// cout << y_k[i].x << "  " << y_k[i].y << "  " << y_k[i].mid << "  " << y_k[i].sid << endl;
 			num_meas++; // Measurement is valid
 			mid_valid.push_back(y_k[i].mid); // Measurement is of Marker MID
 		}
@@ -221,6 +222,9 @@ EKF SENSOR::ekf_update(EKF e, BAG bag, std::vector<DATA> y_k, CORE core, CONSTAN
 		}
 
 		e_kp1.e_y = y - yhat; // Measurement Innovation
+
+		// std::cout << "e_y = " << e_kp1.e_y << std::endl;
+		// std::cin.get();
 
 		// Kalman gain matrix
 		mat K_tilde = e.P * H_tilde.t() * (H_tilde * e.P * H_tilde.t() + R_blk).i();

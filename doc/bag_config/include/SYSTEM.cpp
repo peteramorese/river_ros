@@ -120,7 +120,7 @@ BAG SYSTEM::get_bag()
 
 void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 {
-	cout << "Calibrate Callback" << endl;
+	// cout << "Calibrate Callback" << endl;
 	// cout << "\n\nNEW MESSAGE" << endl;
 
 	// cout << "Package = " << package->pkt.size() << endl;
@@ -134,21 +134,26 @@ void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 
 	if(package->stamp != prev_msg_time)
 	{
+		// cout << "New Package    " << endl;
 		for(int i = 0; i < package->pkt.size(); i++)
 		{
+			// cout << "New Packet " << i << "   " << endl;
 			for(int j = 0; j < package->pkt[i].pt.size(); j++)
 			{
+				// cout << "New Point " << j << "   ";
 				y_k.x = package->pkt[i].pt[j].x;
 				y_k.y = package->pkt[i].pt[j].y;
 				y_k.mid = package->pkt[i].pt[j].mid;
 				y_k.sid = package->pkt[i].pt[j].sid;
 
+				// cout << y_k.x << "   " << y_k.y << "   " << y_k.mid << "   " << y_k.sid << endl;
 				curr_sid = y_k.sid;
 
 				Y_k.push_back(y_k);
 			}
 
 			Y.push_back(Y_k);
+			Y_k.clear();
 
 			e = sensors[curr_sid].ekf.back();
 			run_upd = false; // Assume the update does not need to be run
@@ -163,12 +168,14 @@ void SYSTEM::calibrate_callback(const river_ros::data_pkg::ConstPtr& package)
 			
 			if(run_upd)
 			{
+				// cout << "Calibrate Sensor " << curr_sid << endl;
 				sensors[curr_sid].calibrate_sensor(Y, bag, core, cnst);
 			}
 			else
 			{
 				sensors[curr_sid].ekf.push_back(e);
 			}
+			Y.clear();
 		}
 
 		prev_msg_time = package->stamp;
@@ -185,7 +192,7 @@ void SYSTEM::calibrate(std::vector<int> s)
 	// 
 
 	cout << "Calibrating Sensors..." << endl;
-	cout << "\n\n\n\n\n";
+	// cout << "\n\n\n\n\n";
 
 	est_start = std::chrono::system_clock::now();
 	std::chrono::time_point<std::chrono::system_clock> current_time;
@@ -213,7 +220,7 @@ void SYSTEM::calibrate(std::vector<int> s)
 
 		if(verbose)
 		{
-			printf("\033[A\033[A\033[A\033[A\033[A");
+			// printf("\033[A\033[A\033[A\033[A\033[A");
 		}
 
 		for(int i = 0; i < s.size(); i++)
@@ -222,30 +229,30 @@ void SYSTEM::calibrate(std::vector<int> s)
 
 			if(verbose)
 			{
-				printf("\33[2KT\r");
+				// printf("\33[2KT\r");
 
-				cout << "Sensor " << s[i] << " 2sigma:";
+				// cout << "Sensor " << s[i] << " 2sigma:";
 			}
 
 			for(int j = 0; j < cnst.n; j++)
 			{
 				if(verbose)
 				{
-					printf("\r");
+					// printf("\r");
 					if(j == 0)
 					{
-						cout << "\t\t\tx = ";
+						// cout << "\t\t\tx = ";
 					}
 					else if(j == 1)
 					{
-						cout << "\t\t\t\t\t\ty = ";
+						// cout << "\t\t\t\t\t\ty = ";
 					}
 					else if(j == 2)
 					{
-						cout << "\t\t\t\t\t\t\t\t\tz = ";
+						// cout << "\t\t\t\t\t\t\t\t\tz = ";
 					}
 					
-					cout << 2.0*sqrt(e.P(j, j));
+					// cout << 2.0*sqrt(e.P(j, j));
 				}
 
 				if(2.0*sqrt(e.P(j, j)) > stop_est_cov_thrsh)
@@ -254,11 +261,13 @@ void SYSTEM::calibrate(std::vector<int> s)
 				}
 			}
 
-			cout << endl;
+			// cout << endl;
 		}
 
 		current_time = std::chrono::system_clock::now();
 		delta_time = current_time - est_start;
+
+		// cout << "Delta Time: " << delta_time.count() << endl;
 
 		if(delta_time.count() > stop_est_time)
 		{
@@ -330,6 +339,7 @@ void SYSTEM::calibrate(std::vector<int> s)
 		for(int i = 0; i < s.size(); i++)
 		{
 			sensors[s[i]].plot_ekf(); // Plot the EKF results
+			// sensors[s[i]].plot_e_y();
 		}
 	}
 }
@@ -660,7 +670,7 @@ void SYSTEM::estimator_callback(const river_ros::data_pkg::ConstPtr& package)
 
 	if(package->stamp != prev_msg_time)
 	{
-		cout << "Package stamp " << package->stamp << "\tPrevious msg time: " << prev_msg_time << endl;
+		// cout << "Package stamp " << package->stamp << "\tPrevious msg time: " << prev_msg_time << endl;
 
 		for(int cur_mid = 0; cur_mid < bag.markers.size(); cur_mid++)
 		{
@@ -832,6 +842,7 @@ void SYSTEM::run_estimator(std::vector<int> s)
 			if(bag.markers[i].updated)
 			{
 				bag.markers[i].plot_ekf();
+				// bag.markers[i].plot_e_y();
 			}
 		}
 	}
@@ -1037,7 +1048,7 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 			res.observation_label = "cargo_not_found";
 		}
 
-		run_estimator_dropoff();
+		// run_estimator_dropoff();
 
 		if(bag.bag_found)
 		{

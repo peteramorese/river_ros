@@ -12,8 +12,8 @@
 #include "std_msgs/MultiArrayDimension.h"
 #include "std_msgs/Int16MultiArray.h"
 
-// int count_max = 3;
-// int count = 0;
+int cnt_max = 3;
+int cnt = 0;
 
 short int Arr[4];
 
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "Pixy_Pack");
 
 	ros::NodeHandle n;
-	ros::Rate loop_rate(500);
+	ros::Rate loop_rate(100);
 
 	ros::Subscriber sub3 = n.subscribe("Pixy_Data", 100, arrayCallback);
 
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 				sid_prev = sid_curr; // Update the previous sid to this sid
 			}
 		}
-		else
+		else if(false)
 		{
 			point.x = 5;
 			point.y = 10;
@@ -131,6 +131,34 @@ int main(int argc, char **argv)
 			else
 			{
 				count[0]++;
+			}
+		}
+		else
+		{
+			for(int j = 0; j < 4; j++)
+			{
+				printf("%d, ", Arr[j]);
+			}
+
+			printf("\n");
+			point.x = Arr[0];
+			point.y = Arr[1];
+			point.mid = Arr[2];
+			point.sid = Arr[3];
+
+			packet.pt.push_back(point);
+			cnt++;
+
+			if(cnt == cnt_max) 
+			{
+				cnt = 0;
+				package.pkt.push_back(packet);
+				packet.pt.clear();
+				chat_pub.publish(package);
+				ros::spinOnce();
+		//		loop_rate.sleep();
+				// ROS_INFO("msg published");
+				package.pkt.clear();
 			}
 		}
 	}
