@@ -42,8 +42,6 @@ sys.calibrate_pickup();
 // Run dropoff sensor calibration
 sys.calibrate_dropoff();
 
-cin.get();
-
 // Update system parameters
 sys.update_params();
 
