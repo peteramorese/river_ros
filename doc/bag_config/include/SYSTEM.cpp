@@ -1048,11 +1048,7 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 			res.observation_label = "cargo_not_found";
 		}
 
-<<<<<<< HEAD
 		// run_estimator_dropoff();
-=======
-		//run_estimator_dropoff();
->>>>>>> 84ee962d828578562e54176b20fae43d2567be90
 
 		if(bag.bag_found)
 		{
