@@ -182,9 +182,9 @@ void BAG::estimate_ori()
 		}
 	}
 
-	quat = dcm_to_quat(Q);
+	quat = dcm_to_quat(Q.t());
 
-	vec Core2UR = {-0.421, 0, 0.634};
+	vec Core2UR = {-0.421, 0, 1.037};
 
 	center = center + Core2UR;
 }
