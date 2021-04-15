@@ -497,7 +497,10 @@ void SYSTEM::set_sensors_min(vector<int> s)
 
 	for(int i = 0; i < s.size(); i++) // For each sensor defined in the network
 	{
+		EKF e = sensors[s[i]].ekf.back();
+
 		cout << "Sensor " << i << " x = " << sensors[s[i]].position[0] << "\ty = " << sensors[s[i]].position[1] << "\tz = " << sensors[s[i]].position[2] << endl;
+		cout << "\t2 Sigma:\tx = " << 2.0*sqrt(e.P(1,1)) << "\ty = " << 2.0*sqrt(e.P(2,2)) << "\tz = " << 2.0*sqrt(e.P(2,2)) << endl;
 
 		s_min.position = sensors[s[i]].position;
 		s_min.point = sensors[s[i]].point;
@@ -1098,10 +1101,13 @@ void SYSTEM::reset_bag_config_msg()
 void SYSTEM::upd_bag_config_msg(string domain)
 {
 
+	// cout << "Updated message: ";
+
 	bag_config_msg.pose_array.header.stamp = ros::Time::now();
 
 	if(bag.bag_found)
 	{
+		// cout << "bag was found" << endl;
 		bag_config_msg.bags_found = true;
 		string domain_lbl;
 
@@ -1133,11 +1139,12 @@ void SYSTEM::send_bag_config_msg()
 {
 	ros::Publisher BagConfigPub = est_nh.advertise<river_ros::BagConfigPoseArray_msg>("bag_config/bag_configs", 10);
 
-	cout << "Bags found = " << bag_config_msg.bags_found << endl;
+	// cout << "Bag config message sent: " << bag_config_msg.bags_found << endl;
+	// cout << "Bags found = " << bag_config_msg.bags_found << endl;
 
 	if(bag_config_msg.pose_array.poses.size() > 0)
 	{
-		cout << "Position: " << bag_config_msg.pose_array.poses[0].position.x << "   " << bag_config_msg.pose_array.poses[0].position.y << "   " << bag_config_msg.pose_array.poses[0].position.z << endl;
+		// cout << "Position: " << bag_config_msg.pose_array.poses[0].position.x << "   " << bag_config_msg.pose_array.poses[0].position.y << "   " << bag_config_msg.pose_array.poses[0].position.z << endl;
 	}
 
 	BagConfigPub.publish(bag_config_msg);
@@ -1173,45 +1180,45 @@ void SYSTEM::update_params()
 }
 
 
-vector<vector<vector<DATA>>> SYSTEM::reorg_data(vector<vector<vector<DATA>>> Y)
-{
-	// Function to reorganize the data vector Y from Y[sid][k][mid] to Y[mid][k][sid]
-	// 
-	// Output:
-	// 		Y_reorg - [vector<vector<vector<DATA>>>] Reorganized data vector
-	// 
+// vector<vector<vector<DATA>>> SYSTEM::reorg_data(vector<vector<vector<DATA>>> Y)
+// {
+// 	// Function to reorganize the data vector Y from Y[sid][k][mid] to Y[mid][k][sid]
+// 	// 
+// 	// Output:
+// 	// 		Y_reorg - [vector<vector<vector<DATA>>>] Reorganized data vector
+// 	// 
 
-	vector<vector<vector<DATA>>> Y_reorg;
-	vector<vector<DATA>> Y_k;
-	vector<DATA> Y_sid;
+// 	vector<vector<vector<DATA>>> Y_reorg;
+// 	vector<vector<DATA>> Y_k;
+// 	vector<DATA> Y_sid;
 
-	for(int mid = 0; mid < bag.markers.size(); mid++) // Loop through all possible marker IDs
-	{
-		for(int k = 0; k < Y[0].size(); k++) // Loop through all time steps k
-		{
-			for(int sid = 0; sid < Y.size(); sid++) // Loop through all sensors
-			{
-				if(Y[sid].size() > 0)
-				{
-					for(int m = 0; m < Y[sid][k].size(); m++) // Loop through all DATA objects
-					{
-						if(Y[sid][k][m].mid == mid) // If the measurement is for Marker mid, add it to the vector
-						{
-							Y_sid.push_back(Y[sid][k][m]);
-							break;
-						}
-					}
-				}
-			}
-			if(Y_sid.size() > 0) // Only add measurements if there are measurements to add
-			{
-				Y_k.push_back(Y_sid); // Add all measurements of mid at time k
-				Y_sid.clear(); // Clear the vector for the next time k
-			}
-		}
-		Y_reorg.push_back(Y_k); // Add all measurements of mid for all time k
-		Y_k.clear(); // Clear the vector for the next marker ID
-	}
+// 	for(int mid = 0; mid < bag.markers.size(); mid++) // Loop through all possible marker IDs
+// 	{
+// 		for(int k = 0; k < Y[0].size(); k++) // Loop through all time steps k
+// 		{
+// 			for(int sid = 0; sid < Y.size(); sid++) // Loop through all sensors
+// 			{
+// 				if(Y[sid].size() > 0)
+// 				{
+// 					for(int m = 0; m < Y[sid][k].size(); m++) // Loop through all DATA objects
+// 					{
+// 						if(Y[sid][k][m].mid == mid) // If the measurement is for Marker mid, add it to the vector
+// 						{
+// 							Y_sid.push_back(Y[sid][k][m]);
+// 							break;
+// 						}
+// 					}
+// 				}
+// 			}
+// 			if(Y_sid.size() > 0) // Only add measurements if there are measurements to add
+// 			{
+// 				Y_k.push_back(Y_sid); // Add all measurements of mid at time k
+// 				Y_sid.clear(); // Clear the vector for the next time k
+// 			}
+// 		}
+// 		Y_reorg.push_back(Y_k); // Add all measurements of mid for all time k
+// 		Y_k.clear(); // Clear the vector for the next marker ID
+// 	}
 
-	return Y_reorg;
-}
+// 	return Y_reorg;
+// }
