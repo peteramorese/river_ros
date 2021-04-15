@@ -25,24 +25,24 @@ calibrator:
     num_markers: 5
 multiple_bags: false
 pack_file_path: ~/catkin_ws/src/
-plot: {calibration: false, estimation: false}
+plot: {calibration: true, estimation: false}
 run_calibration: {dropoff: false, pickup: false}
 run_estimation: true
 sensor_0:
   point: [0, 0, -0.4725]
-  position: [0.39126, 0.99623, 0.42042]
+  position: [0.42192, 0.98127, 0.46108]
 sensor_1:
   point: [0, 0, -0.4725]
-  position: [0.56183, -1.04221, 0.37510]
+  position: [0.50907, -1.04659, 0.30997]
 sensor_2:
   point: [0, 0, -0.4725]
-  position: [0.84444, 0.63656, 0.81397]
+  position: [0.81359, 0.61747, 0.85538]
 sensor_3:
   point: [0, 0, -0.4725]
-  position: [0.87911, -0.58352, 0.80069]
+  position: [0.81183, -0.56090, 0.88151]
 sensor_4:
   point: [0, 0, -0.4725]
-  position: [0.891, -0.0707, 1.2802]
+  position: [0.95057, 0.03476, 1.09437]
 sensor_5:
   point: [2.272, 0.8453, -0.8453]
   position: [1.772, 1.0353, 0.5978]
@@ -59,6 +59,6 @@ sensor_9:
   point: [2.272, 0.8453, -0.8453]
   position: [2.272, -1.0353, 0.5978]
 software_mode: Flight
-thresholds: {covariance: 0.001, time: 30}
+thresholds: {covariance: 0.001, time: 20}
 update_params: true
 verbose: true
