@@ -158,14 +158,24 @@ class PlanningQuerySrv {
 					std::vector<double> joint_val_target = {0.0,-2.094,1.763,-1.222,-1.641,0.0};
 					move_group_ptr->setJointValueTarget(joint_val_target);
 				} else {
-					pose.position.x = request.manipulator_pose.position.x;
-					pose.position.y = request.manipulator_pose.position.y;
-					pose.position.z = request.manipulator_pose.position.z + .1 + bag_h/2;
-					double theta = M_PI/2;
-					pose.orientation.x = std::sin(theta/2)*0;//-request.manipulator_pose.orientation.x;
-					pose.orientation.y = std::sin(theta/2)*1;//-request.manipulator_pose.orientation.y;
-					pose.orientation.z = std::sin(theta/2)*0;//-request.manipulator_pose.orientation.z;
-					pose.orientation.w = std::cos(theta/2);//request.manipulator_pose.orientation.w;
+					tf2::Quaternion q_orig, q_in, q_f, q_rot, q_90;
+					q_orig[0] = 0;
+					q_orig[1] = 0;
+					q_orig[2] = bag_h/2 + .09;
+					q_orig[3] = 0;
+
+					tf2::convert(request.manipulator_pose.orientation, q_in);
+					q_90.setRPY(0, M_PI/2, 0);
+					q_f = q_in.inverse() * q_orig * q_in; 
+					q_rot = q_in * q_90;
+
+					pose.position.x = request.manipulator_pose.position.x + q_f[0];
+					pose.position.y = request.manipulator_pose.position.y + q_f[1];
+					pose.position.z = request.manipulator_pose.position.z + q_f[2];
+					pose.orientation.x = q_rot[0];
+					pose.orientation.y = q_rot[1];  
+					pose.orientation.z = q_rot[2];
+					pose.orientation.w = q_rot[3];
 					move_group_ptr->setPoseTarget(pose);
 				}
 				move_group_ptr->setPlanningTime(15.0);
