@@ -47,8 +47,8 @@ int main(int argc, char **argv) {
 
 	Edge super_tasks(true);
 	super_tasks.connect(0, 1, 0.0f, "observe");
-	super_tasks.connect(1, 0, 0.0f, "cargo_not_found");
 	super_tasks.connect(1, 2, 0.0f, "cargo_found");
+	super_tasks.connect(1, 0, 0.0f, "cargo_not_found");
 	super_tasks.connect(2, 3, 0.0f, "plan_execute");
 	super_tasks.connect(3, 0, 0.0f, "execute_failure_observe");
 	super_tasks.connect(3, 7, 0.0f, "execute_failure_fatal");

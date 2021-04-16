@@ -24,7 +24,7 @@ calibrator:
     marker_5: [0.75, 0.89, 0.92]
     num_markers: 5
 multiple_bags: false
-pack_file_path: ~/catkin_ws/src/
+pack_file_path: ~/ws_moveit/src/
 plot: {calibration: true, estimation: false}
 run_calibration: {dropoff: false, pickup: false}
 run_estimation: true
@@ -39,7 +39,7 @@ sensor_2:
   position: [0.81359, 0.61747, 0.85538]
 sensor_3:
   point: [0, 0, -0.4725]
-  position: [0.81183, -0.56090, 0.88151]
+  position: [0.81183, -0.5609, 0.88151]
 sensor_4:
   point: [0, 0, -0.4725]
   position: [0.95057, 0.03476, 1.09437]

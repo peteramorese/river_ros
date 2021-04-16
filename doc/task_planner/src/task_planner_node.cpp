@@ -107,6 +107,7 @@ struct SensoryInfoSub {
 		} else {
 			ROS_ERROR_NAMED("task_planer_node","Unrecognized input from sensory_info");
 		}
+		std::cout<<"    TRANSLATOR POSITION: "<<info->z<<std::endl;
 		trans_pos = info->z;
 	}
 
@@ -875,7 +876,7 @@ int main(int argc, char **argv){
 						//int N_iter = 40;
 						command_TP_msg.x = 1.0f;
 						//state_sequence[i+1]->print();
-						float trans_pos = 0.0;
+						float trans_pos = 0.5;
 						if (state_sequence[i+1]->getVar("eeLoc") == "safep") {
 							trans_pos = 1.0;
 						} else if (state_sequence[i+1]->getVar("eeLoc") == "safed") {
@@ -885,12 +886,10 @@ int main(int argc, char **argv){
 						command_TP_pub.publish(command_TP_msg);
 						ros::spinOnce();
 						ros::Rate r_translator(1);
+						std::cout<<" received trans position: "<<sensory_sub_container.trans_pos<<" set trans position: "<< trans_pos<<std::endl;
 						while (ros::ok() && sensory_sub_container.trans_pos != trans_pos) {
 							ros::spinOnce();
 							std::cout<<"Waiting on translator. Commanded Position: "<<trans_pos<<std::endl;
-							if (sensory_sub_container.grasp_switch && sensory_sub_container.eef_actuated) {
-								break;
-							}
 							r_translator.sleep();	
 						}
 					}

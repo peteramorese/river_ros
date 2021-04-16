@@ -1009,22 +1009,20 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 	{
 		bag_config_msg.bags_found = true;
 		bag_config_msg.observation_label = "cargo_found";
-		// else
-		// bag_configs.bags_found = false;
-		// bag_configs.observation_label = "cargo_not_found";
 		bag_config_msg.pose_array.header.stamp = ros::Time::now();
-		bag_config_msg.pose_array.poses.resize(2);
-		bag_config_msg.domain_labels.resize(2);
+		bag_config_msg.pose_array.poses.resize(1);
+		bag_config_msg.domain_labels.resize(1);
 
 		bag_config_msg.domain_labels[0] = "pickup location domain";
-		bag_config_msg.pose_array.poses[0].position.x = .6;
-		bag_config_msg.pose_array.poses[0].position.y = .6;
-		bag_config_msg.pose_array.poses[0].position.z = .1;
-		bag_config_msg.pose_array.poses[0].orientation.x = 0;
-		bag_config_msg.pose_array.poses[0].orientation.y = 0;
-		bag_config_msg.pose_array.poses[0].orientation.z = 0;
-		bag_config_msg.pose_array.poses[0].orientation.w = 1;
+		bag_config_msg.pose_array.poses[0].position.x = -.4;
+		bag_config_msg.pose_array.poses[0].position.y = 0.0;
+		bag_config_msg.pose_array.poses[0].position.z = .6;
+		bag_config_msg.pose_array.poses[0].orientation.x = .367;
+		bag_config_msg.pose_array.poses[0].orientation.y = .7339;
+		bag_config_msg.pose_array.poses[0].orientation.z = .4893;
+		bag_config_msg.pose_array.poses[0].orientation.w = .2955;
 
+		/*
 		bag_config_msg.domain_labels[1] = "pickup location domain";
 		bag_config_msg.pose_array.poses[1].position.x = -.6;
 		bag_config_msg.pose_array.poses[1].position.y = .6;
@@ -1033,6 +1031,7 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 		bag_config_msg.pose_array.poses[1].orientation.y = 0;
 		bag_config_msg.pose_array.poses[1].orientation.z = 1;
 		bag_config_msg.pose_array.poses[1].orientation.w = 0;
+		*/
 
 		res.observation_label = "cargo_found";
 	}

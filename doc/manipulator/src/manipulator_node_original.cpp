@@ -161,12 +161,12 @@ class PlanningQuerySrv {
 					tf2::Quaternion q_orig, q_in, q_f, q_rot, q_90;
 					q_orig[0] = 0;
 					q_orig[1] = 0;
-					q_orig[2] = bag_h/2 + .09;
+					q_orig[2] = bag_h/2 + .9;
 					q_orig[3] = 0;
 
 					tf2::convert(request.manipulator_pose.orientation, q_in);
 					q_90.setRPY(0, M_PI/2, 0);
-					q_f = q_in.inverse() * q_orig * q_in; 
+					q_f = q_in * q_orig * q_in.inverse(); 
 					q_rot = q_in * q_90;
 
 					pose.position.x = request.manipulator_pose.position.x + q_f[0];
@@ -289,6 +289,7 @@ int main(int argc, char **argv) {
 	/* Define Table, Collision Environment, End Effector */ 
 	
 	// ground:
+	/*
 	moveit_msgs::CollisionObject ground;
 	ground.header.frame_id = "world";
 	ground.id = "ground_p";
@@ -341,9 +342,11 @@ int main(int argc, char **argv) {
 	ceiling.id = "ceiling_d";
 	colObjVec.push_back(ceiling);
 	colObjVec_domain_lbls.push_back("dropoff domain");
+	*/
 
 
 	// table:
+	/*
 	moveit_msgs::CollisionObject table;
 	table.header.frame_id = "world";
 	table.id = "table";
@@ -365,8 +368,10 @@ int main(int argc, char **argv) {
 	table.operation = table.ADD;
 	colObjVec.push_back(table);
 	colObjVec_domain_lbls.push_back("pickup domain");
+	*/
 
 	// drop off table
+	/*
 	moveit_msgs::CollisionObject table_dropoff;
 	table_dropoff.header.frame_id = "world";
 	table_dropoff.id = "table_dropoff";
@@ -490,6 +495,7 @@ int main(int argc, char **argv) {
 	wall_R.id = "wall_R_d";
 	colObjVec.push_back(wall_R);
 	colObjVec_domain_lbls.push_back("dropoff domain");
+	*/
 
 	// End Effector
 	moveit_msgs::CollisionObject eef;
@@ -503,7 +509,7 @@ int main(int argc, char **argv) {
 	eef.primitives[0].dimensions[2] = .12;
 
 	eef.primitive_poses.resize(1);
-	eef.primitive_poses[0].position.x =.09*.5+.01;
+	eef.primitive_poses[0].position.x =.09*.5;
 	eef.primitive_poses[0].position.y = 0;
 	eef.primitive_poses[0].position.z = .02; 
 	eef.primitive_poses[0].orientation.x = 0;
@@ -515,7 +521,7 @@ int main(int argc, char **argv) {
 	colObjVec_domain_lbls.push_back("none");
 
 	planning_scene_interface.applyCollisionObjects(colObjVec);
-	planning_scene_interface.addCollisionObjects(colObjVec);
+	//planning_scene_interface.addCollisionObjects(colObjVec);
 	move_group.attachObject("eef","ee_link");
 	move_group.setEndEffectorLink("ee_link");
 
