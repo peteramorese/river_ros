@@ -2,7 +2,8 @@
 <launch>
 
   <node name="bag_config_node" pkg="river_ros" type="bag_config_node" respawn="false" output="screen">
-    <rosparam command="load" file="$(find river_ros)/config/params.yaml"/>
+    <!--rosparam command="load" file="$(find river_ros)/config/params.yaml"/-->
+    <rosparam command="load" file="/home/peter/ws_moveit/src/river_ros/config/params.yaml"/>
   </node>
 
 </launch>

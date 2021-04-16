@@ -30,19 +30,19 @@ run_calibration: {dropoff: false, pickup: false}
 run_estimation: true
 sensor_0:
   point: [0, 0, -0.4725]
-  position: [0.38054, 0.98673, 0.33501]
+  position: [0.354074, 1.00545, 0.345848]
 sensor_1:
   point: [0, 0, -0.4725]
-  position: [0.56666, -1.0527, 0.34741]
+  position: [0.530151, -1.0373, 0.393276]
 sensor_2:
   point: [0, 0, -0.4725]
-  position: [0.75204, 0.55504, 0.95058]
+  position: [0.766765, 0.640642, 0.865877]
 sensor_3:
   point: [0, 0, -0.4725]
-  position: [0.84794, -0.57313, 0.82440]
+  position: [0.862891, -0.572339, 0.805956]
 sensor_4:
   point: [0, 0, -0.4725]
-  position: [0.96936, 0.02644, 1.11781]
+  position: [1.09027, 0.0684528, 1.03542]
 sensor_5:
   point: [2.272, 0.8453, -0.8453]
   position: [1.772, 1.0353, 0.5978]

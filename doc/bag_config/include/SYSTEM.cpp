@@ -1014,13 +1014,13 @@ bool SYSTEM::observe_srv_callback(river_ros::Observe_srv::Request &req, river_ro
 		bag_config_msg.domain_labels.resize(1);
 
 		bag_config_msg.domain_labels[0] = "pickup location domain";
-		bag_config_msg.pose_array.poses[0].position.x = -.4;
-		bag_config_msg.pose_array.poses[0].position.y = 0.0;
-		bag_config_msg.pose_array.poses[0].position.z = .6;
-		bag_config_msg.pose_array.poses[0].orientation.x = .367;
-		bag_config_msg.pose_array.poses[0].orientation.y = .7339;
-		bag_config_msg.pose_array.poses[0].orientation.z = .4893;
-		bag_config_msg.pose_array.poses[0].orientation.w = .2955;
+		bag_config_msg.pose_array.poses[0].position.x = -.67;
+		bag_config_msg.pose_array.poses[0].position.y = 0.025;
+		bag_config_msg.pose_array.poses[0].position.z = .37;
+		bag_config_msg.pose_array.poses[0].orientation.x = .0024;
+		bag_config_msg.pose_array.poses[0].orientation.y = -0.01842;
+		bag_config_msg.pose_array.poses[0].orientation.z = .415616;
+		bag_config_msg.pose_array.poses[0].orientation.w = .90934;
 
 		/*
 		bag_config_msg.domain_labels[1] = "pickup location domain";

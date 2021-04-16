@@ -161,7 +161,7 @@ class PlanningQuerySrv {
 					tf2::Quaternion q_orig, q_in, q_f, q_rot, q_90;
 					q_orig[0] = 0;
 					q_orig[1] = 0;
-					q_orig[2] = bag_h/2 + .9;
+					q_orig[2] = bag_h/2 + .088;
 					q_orig[3] = 0;
 
 					tf2::convert(request.manipulator_pose.orientation, q_in);
@@ -172,6 +172,7 @@ class PlanningQuerySrv {
 					pose.position.x = request.manipulator_pose.position.x + q_f[0];
 					pose.position.y = request.manipulator_pose.position.y + q_f[1];
 					pose.position.z = request.manipulator_pose.position.z + q_f[2];
+					q_rot.normalize();
 					pose.orientation.x = q_rot[0];
 					pose.orientation.y = q_rot[1];  
 					pose.orientation.z = q_rot[2];
@@ -181,11 +182,16 @@ class PlanningQuerySrv {
 				move_group_ptr->setPlanningTime(15.0);
 
 				ROS_INFO_NAMED("manipulator_node", "Reference frame: %s", move_group_ptr->getPlanningFrame().c_str());
-				std::cout<<"moving to x: "<< request.manipulator_pose.position.x<<std::endl;
-				std::cout<<"moving to y: "<< request.manipulator_pose.position.y<<std::endl;
-				std::cout<<"moving to z: "<< request.manipulator_pose.position.z<<std::endl;
+				std::cout<<"moving to x: "<< pose.position.x<<std::endl;
+				std::cout<<"moving to y: "<< pose.position.y<<std::endl;
+				std::cout<<"moving to z: "<< pose.position.z<<std::endl;
+				std::cout<<"moving to qx: "<< pose.orientation.x<<std::endl;
+				std::cout<<"moving to qy: "<< pose.orientation.y<<std::endl;
+				std::cout<<"moving to qz: "<< pose.orientation.z<<std::endl;
+				std::cout<<"moving to qw: "<< pose.orientation.w<<std::endl;
 				bool success = false;
 				for (int ii=0; ii<N_TRIALS; ii++){
+					ros::WallDuration(3.0).sleep();
 					std::cout<<"before plan"<<std::endl;
 					//move_group_ptr->plan(plan);
 					std::cout<<"before execute"<<std::endl;
@@ -289,7 +295,6 @@ int main(int argc, char **argv) {
 	/* Define Table, Collision Environment, End Effector */ 
 	
 	// ground:
-	/*
 	moveit_msgs::CollisionObject ground;
 	ground.header.frame_id = "world";
 	ground.id = "ground_p";
@@ -317,6 +322,7 @@ int main(int argc, char **argv) {
 	colObjVec_domain_lbls.push_back("dropoff domain");
 
 	// ceiling:
+	/*
 	moveit_msgs::CollisionObject ceiling;
 	ceiling.header.frame_id = "world";
 	ceiling.id = "ceiling_p";
@@ -346,7 +352,6 @@ int main(int argc, char **argv) {
 
 
 	// table:
-	/*
 	moveit_msgs::CollisionObject table;
 	table.header.frame_id = "world";
 	table.id = "table";
@@ -355,12 +360,12 @@ int main(int argc, char **argv) {
 	table.primitives[0].dimensions.resize(3);
 	table.primitives[0].dimensions[0] = .5;
 	table.primitives[0].dimensions[1] = 1.1;
-	table.primitives[0].dimensions[2] = .56;
+	table.primitives[0].dimensions[2] = .54;
 
 	table.primitive_poses.resize(1);
-	table.primitive_poses[0].position.x = -.34-.5/2; //.34
+	table.primitive_poses[0].position.x = -.36-.5/2; //.34
 	table.primitive_poses[0].position.y = 0;
-	table.primitive_poses[0].position.z = .56/2; // should be -.5
+	table.primitive_poses[0].position.z = .54/2; // should be -.5
 	table.primitive_poses[0].orientation.x = 0;
 	table.primitive_poses[0].orientation.y = 0;
 	table.primitive_poses[0].orientation.z = 0;
@@ -368,10 +373,9 @@ int main(int argc, char **argv) {
 	table.operation = table.ADD;
 	colObjVec.push_back(table);
 	colObjVec_domain_lbls.push_back("pickup domain");
-	*/
+
 
 	// drop off table
-	/*
 	moveit_msgs::CollisionObject table_dropoff;
 	table_dropoff.header.frame_id = "world";
 	table_dropoff.id = "table_dropoff";
@@ -401,12 +405,12 @@ int main(int argc, char **argv) {
 	ur_box.primitives.resize(1);
 	ur_box.primitives[0].type = colObjVec[0].primitives[0].BOX;
 	ur_box.primitives[0].dimensions.resize(3);
-	ur_box.primitives[0].dimensions[0] = .5;
+	ur_box.primitives[0].dimensions[0] = (.534-.41)/2;
 	ur_box.primitives[0].dimensions[1] = 1.1;
 	ur_box.primitives[0].dimensions[2] = .2032;
 
 	ur_box.primitive_poses.resize(1);
-	ur_box.primitive_poses[0].position.x = .254 + (.534-.254)/2;
+	ur_box.primitive_poses[0].position.x = .41 + (.534-.41)/2;
 	ur_box.primitive_poses[0].position.y = 0;
 	ur_box.primitive_poses[0].position.z = .2032/2; // should be -.5
 	ur_box.primitive_poses[0].orientation.x = 0;
@@ -495,7 +499,6 @@ int main(int argc, char **argv) {
 	wall_R.id = "wall_R_d";
 	colObjVec.push_back(wall_R);
 	colObjVec_domain_lbls.push_back("dropoff domain");
-	*/
 
 	// End Effector
 	moveit_msgs::CollisionObject eef;
@@ -504,12 +507,12 @@ int main(int argc, char **argv) {
 	eef.primitives.resize(1);
 	eef.primitives[0].type = colObjVec[1].primitives[0].BOX;
 	eef.primitives[0].dimensions.resize(3);
-	eef.primitives[0].dimensions[0] = .09;
+	eef.primitives[0].dimensions[0] = .086;
 	eef.primitives[0].dimensions[1] = .1;
 	eef.primitives[0].dimensions[2] = .12;
 
 	eef.primitive_poses.resize(1);
-	eef.primitive_poses[0].position.x =.09*.5;
+	eef.primitive_poses[0].position.x =.086*.5;
 	eef.primitive_poses[0].position.y = 0;
 	eef.primitive_poses[0].position.z = .02; 
 	eef.primitive_poses[0].orientation.x = 0;
